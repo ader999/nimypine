@@ -19,3 +19,7 @@ if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 handler403 = 'cuentas.views.permission_denied_view'
+
+admin.site.site_header = "Administración de NIMYPINE" # El título principal en la cabecera
+admin.site.site_title = "Portal de NIMYPINE"         # El título en la pestaña del navegador
+admin.site.index_title = "Bienvenido al portal de administración" # El título en la página de inicio del admin

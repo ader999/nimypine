@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+from logging import DEBUG
 from pathlib import Path
 import os
 from pathlib import Path
@@ -26,18 +26,20 @@ env = environ.Env()
 # Lee el archivo .env
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
-
+DEBUG = True
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
-
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-#x&4@j&semoaejm($hek8nnpq5xk#@1zki)!pidwb2csrewahj"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['nimypine-production.up.railway.app', '127.0.0.1']
+CSRF_TRUSTED_ORIGINS = [
+        'https://nimypine-production.up.railway.app',
+        'http://127.0.0.1:8000',
 
+    ]
 
 # Application definition
 

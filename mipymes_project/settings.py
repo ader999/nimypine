@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     "cuentas",
     "marketplace",
     "produccion",
-    "storages",         # <-- AÑADIDO: Necesitas registrar la app que sí usas.
+    "storages",
 ]
 
 # --- Middleware ---
@@ -97,38 +97,22 @@ USE_TZ = True
 
 
 
-MINIO_S3_ENDPOINT_URL = env('MINIO_S3_ENDPOINT_URL')
-MINIO_ACCESS_KEY_ID = env('MINIO_ACCESS_KEY_ID')
-MINIO_SECRET_ACCESS_KEY = env('MINIO_SECRET_ACCESS_KEY')
-MINIO_BUCKET_NAME = env('MINIO_BUCKET_NAME')
+AWS_S3_ENDPOINT_URL = env('MINIO_S3_ENDPOINT_URL')
+AWS_ACCESS_KEY_ID = env('MINIO_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = env('MINIO_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = env('MINIO_BUCKET_NAME')
+AWS_QUERYSTRING_AUTH = False
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL = None
 
-# Mapeamos a las variables que django-storages espera
-# (Esto también estaba bien)
-AWS_S3_ENDPOINT_URL = MINIO_S3_ENDPOINT_URL
-AWS_ACCESS_KEY_ID = MINIO_ACCESS_KEY_ID
-AWS_SECRET_ACCESS_KEY = MINIO_SECRET_ACCESS_KEY
-AWS_STORAGE_BUCKET_NAME = MINIO_BUCKET_NAME
-
-# Configuraciones adicionales importantes
-AWS_QUERYSTRING_AUTH = False  # Para que las URLs de los archivos sean públicas
-AWS_S3_FILE_OVERWRITE = False # Evita sobreescribir archivos con el mismo nombre
-AWS_DEFAULT_ACL = None        # Recomendado para Minio
-
-# --- Configuración de Archivos Estáticos (CSS, JS) para servir desde Minio ---
-# Define la carpeta DENTRO del bucket para los archivos estáticos
-STATICFILES_LOCATION = 'static'
-STATIC_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/{STATICFILES_LOCATION}/'
-
-# --- Configuración de Archivos Multimedia (subidos por usuarios) para servir desde Minio ---
-# Define la carpeta DENTRO del bucket para los archivos multimedia
-MEDIAFILES_LOCATION = 'media'
-MEDIA_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/{MEDIAFILES_LOCATION}/'
-
-# --- Storage Backends (LA PARTE MÁS IMPORTANTE) ---
-# Le dice a Django que TODAS las operaciones de archivos por defecto van a Minio
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-# Le dice a collectstatic que el almacenamiento para archivos estáticos es Minio
+# --- Archivos Estáticos (Static Files) ---
+STATIC_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/static/'
 STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+STATIC_ROOT = BASE_DIR / "staticfiles"  # Esta línea es obligatoria para que `collectstatic` funcione
+
+# --- Archivos Multimedia (Media Files) ---
+MEDIA_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/media/'
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 
 

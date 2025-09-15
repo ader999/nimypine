@@ -95,36 +95,44 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-# --- Configuración de Almacenamiento con Minio (usando django-storages) ---
 
-# Leemos las variables de entorno para Minio
+
 MINIO_S3_ENDPOINT_URL = env('MINIO_S3_ENDPOINT_URL')
 MINIO_ACCESS_KEY_ID = env('MINIO_ACCESS_KEY_ID')
 MINIO_SECRET_ACCESS_KEY = env('MINIO_SECRET_ACCESS_KEY')
 MINIO_BUCKET_NAME = env('MINIO_BUCKET_NAME')
 
 # Mapeamos a las variables que django-storages espera
+# (Esto también estaba bien)
 AWS_S3_ENDPOINT_URL = MINIO_S3_ENDPOINT_URL
 AWS_ACCESS_KEY_ID = MINIO_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY = MINIO_SECRET_ACCESS_KEY
 AWS_STORAGE_BUCKET_NAME = MINIO_BUCKET_NAME
-AWS_QUERYSTRING_AUTH = False
-AWS_S3_FILE_OVERWRITE = False
-AWS_DEFAULT_ACL = None
+
+# Configuraciones adicionales importantes
+AWS_QUERYSTRING_AUTH = False  # Para que las URLs de los archivos sean públicas
+AWS_S3_FILE_OVERWRITE = False # Evita sobreescribir archivos con el mismo nombre
+AWS_DEFAULT_ACL = None        # Recomendado para Minio
 
 # --- Configuración de Archivos Estáticos (CSS, JS) para servir desde Minio ---
+# Define la carpeta DENTRO del bucket para los archivos estáticos
+STATICFILES_LOCATION = 'static'
+STATIC_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/{STATICFILES_LOCATION}/'
 
 # --- Configuración de Archivos Multimedia (subidos por usuarios) para servir desde Minio ---
+# Define la carpeta DENTRO del bucket para los archivos multimedia
+MEDIAFILES_LOCATION = 'media'
+MEDIA_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/{MEDIAFILES_LOCATION}/'
 
-STATIC_ROOT = BASE_DIR / "staticfiles"
-
-STATIC_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/static/'
+# --- Storage Backends (LA PARTE MÁS IMPORTANTE) ---
+# Le dice a Django que TODAS las operaciones de archivos por defecto van a Minio
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+# Le dice a collectstatic que el almacenamiento para archivos estáticos es Minio
 STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 
-# --- Configuración de Archivos Multimedia (subidos por usuarios) para servir desde Minio ---
-MEDIA_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/media/'
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+
 
 
 # --- Resto de la Configuración ---

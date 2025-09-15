@@ -5,3 +5,4 @@ db.sqlite3
  marketplace/__pycache__/
  mipymes_project/__pycache__/
 produccion/__pycache__/
+/staticfiles

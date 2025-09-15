@@ -97,6 +97,7 @@ USE_TZ = True
 
 
 
+# --- AWS & MinIO Settings ---
 AWS_S3_ENDPOINT_URL = env('MINIO_S3_ENDPOINT_URL')
 AWS_ACCESS_KEY_ID = env('MINIO_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = env('MINIO_SECRET_ACCESS_KEY')
@@ -105,14 +106,16 @@ AWS_QUERYSTRING_AUTH = False
 AWS_S3_FILE_OVERWRITE = False
 AWS_DEFAULT_ACL = None
 
-# --- Archivos Estáticos (Static Files) ---
-STATIC_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/static/'
-STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-STATIC_ROOT = BASE_DIR / "staticfiles"  # Esta línea es obligatoria para que `collectstatic` funcione
+# --- Archivos Estáticos (Static Files) - Servidos por WhiteNoise ---
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# --- Archivos Multimedia (Media Files) ---
+# --- Archivos Multimedia (Media Files) - Subidos a MinIO ---
 MEDIA_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/media/'
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+MEDIA_ROOT = BASE_DIR / 'media' # Buena práctica
+
 
 
 

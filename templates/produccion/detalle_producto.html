@@ -1,0 +1,106 @@
+<!-- produccion/templates/produccion/detalle_producto.html -->
+{% extends 'produccion/base_produccion.html' %}
+
+{% block title %}Detalle de {{ producto.nombre }}{% endblock %}
+
+{% block page_title %}Detalle de Producto: {{ producto.nombre }}{% endblock %}
+
+{% block content %}
+<!-- Fila para información general -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header"><h5 class="mb-0">Información General</h5></div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <p><strong>Nombre:</strong> {{ producto.nombre }}</p>
+                        <p><strong>Descripción:</strong> {{ producto.descripcion|default:"No especificada" }}</p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <p><strong>Precio de Venta:</strong> ${{ producto.precio_venta|floatformat:2 }}</p>
+                        <p><strong>Stock Actual:</strong> {{ producto.stock_actual }} unidades</p>
+                        <p><strong>Costo de Producción:</strong> <span class="badge bg-primary fs-6">${{ producto.costo_de_produccion|floatformat:2 }}</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fila para la Formulación (Tabla y Formulario) -->
+<div class="row">
+    <!-- Columna de la Tabla de Insumos -->
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header"><h5 class="mb-0"><i class="bi bi-journal-bookmark-fill me-2"></i>Formulación de Producción</h5></div>
+            <div class="card-body">
+                {% if formulacion_items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Insumo</th>
+                                    <th>Cantidad Requerida</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in formulacion_items %}
+                                <tr>
+                                    <td>{{ item.insumo.nombre }}</td>
+                                    <td>{{ item.cantidad|floatformat:2 }} {{ item.insumo.unidad.abreviatura }}</td>
+                                    <td>
+                                        <a href="{% url 'produccion:editar_formulacion_item' producto.id item.id %}" class="btn btn-sm btn-warning" title="Editar">
+                                            <i class="bi bi-pencil-fill"></i>
+                                        </a>
+                                        <form method="post" action="{% url 'produccion:eliminar_formulacion_item' producto.id item.id %}" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-danger" title="Eliminar"
+                                                    onclick="return confirm('¿Estás seguro de que quieres quitar este insumo de la receta?');">
+                                                <i class="bi bi-trash-fill"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">Aún no has añadido insumos a esta receta.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna del Formulario para Añadir Insumo -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header"><h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Añadir Insumo</h5></div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ form.insumo.id_for_label }}" class="form-label">{{ form.insumo.label }}</label>
+                        {{ form.insumo }}
+                        {% for error in form.insumo.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.cantidad.id_for_label }}" class="form-label">{{ form.cantidad.label }}</label>
+                        {{ form.cantidad }}
+                        {% for error in form.cantidad.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-check-circle-fill me-1"></i> Guardar en Receta
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'produccion:lista_productos' %}" class="btn btn-secondary"><i class="bi bi-arrow-left-circle me-1"></i> Volver al Listado</a>
+</div>
+{% endblock %}

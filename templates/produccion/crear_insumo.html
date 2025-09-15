@@ -1,0 +1,42 @@
+<!-- produccion/templates/produccion/crear_insumo.html -->
+{% extends 'produccion/base_produccion.html' %}
+
+<!-- Título dinámico: si existe un 'insumo', estamos editando. Si no, creando. -->
+{% block title %}{% if insumo %}Editar Insumo{% else %}Registrar Nuevo Insumo{% endif %}{% endblock %}
+
+{% block page_title %}{% if insumo %}Editar Insumo: {{ insumo.nombre }}{% else %}Registrar Nuevo Insumo{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title">
+            {% if insumo %}Actualiza los datos del insumo{% else %}Completa los datos del insumo{% endif %}
+        </h5>
+        <hr>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% for field in form %}
+            <div class="mb-3">
+                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+            {% endfor %}
+
+            <div class="mt-4">
+                <a href="{% url 'produccion:lista_insumos' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </a>
+                <!-- Botón dinámico -->
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle-fill me-1"></i>
+                    {% if insumo %}Guardar Cambios{% else %}Guardar Insumo{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

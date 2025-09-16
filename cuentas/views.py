@@ -114,10 +114,23 @@ def gestionar_rol_usuario(request, usuario_id):
     return render(request, 'cuentas/gestionar_rol.html', contexto)
 
 
-def permission_denied_view(request, exception):
+def manejador_error_403(request, exception):
     """
     Vista personalizada para manejar errores 403 (Permission Denied).
     """
     contexto = {}
     # Pasamos el estado 403 para que la respuesta HTTP sea la correcta
-    return render(request, 'cuentas/permission_denied.html', contexto, status=403)
+    return render(request, 'cuentas/403.html', contexto, status=403)
+
+def manejador_error_404(request, exception):
+    """
+    Vista para manejar los errores 404 (Página no encontrada).
+    """
+    return render(request, 'cuentas/404.html', status=404)
+
+
+def manejador_error_500(request):
+    """
+    Vista para manejar los errores 500 (Error interno del servidor).
+    """
+    return render(request, 'cuentas/500.html', status=500)

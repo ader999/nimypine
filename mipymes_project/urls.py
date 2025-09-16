@@ -18,7 +18,9 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-handler403 = 'cuentas.views.permission_denied_view'
+handler403 = 'cuentas.views.manejador_error_403'
+handler404 = 'cuentas.views.manejador_error_404'
+handler500 = 'cuentas.views.manejador_error_500'
 
 admin.site.site_header = "Administración de NIMYPINE" # El título principal en la cabecera
 admin.site.site_title = "Portal de NIMYPINE"         # El título en la pestaña del navegador

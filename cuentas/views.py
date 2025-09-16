@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from .decorators import rol_requerido
-from .forms import RegistroMipymeForm, CreacionUsuarioMipymeForm, EditarRolUsuarioForm
+from .forms import RegistroMipymeForm, CreacionUsuarioMipymeForm, EditarRolUsuarioForm, RegistroCreadorForm, SoloMipymeForm
 from .models import Mipyme, Usuario
 from .funciones import generar_username_unico
 
@@ -14,48 +14,28 @@ def pagina_inicio(request):
     # Más adelante puedes pasarle datos a través del diccionario de contexto.
     return render(request, 'inicio.html')
 
+@login_required
+def crear_mipyme_para_creador_view(request):
+    # Redirigir si el usuario ya tiene una mipyme
+    if request.user.mipyme:
+        return redirect('produccion:panel')  # O a donde corresponda
 
-
-def registro_mipyme(request):
     if request.method == 'POST':
-        form = RegistroMipymeForm(request.POST)
+        form = SoloMipymeForm(request.POST)
         if form.is_valid():
-            datos = form.cleaned_data
+            mipyme = form.save()  # Guardamos la nueva Mipyme
 
-            # Crear Mipyme (esta parte ya está bien)
-            nueva_mipyme = Mipyme.objects.create(
-                nombre=datos['nombre_empresa'],
-                identificador_fiscal=datos['identificador_fiscal'],
-                tipo=datos['tipo_empresa']
-            )
+            # Actualizamos al usuario actual
+            usuario = request.user
+            usuario.mipyme = mipyme
+            usuario.es_admin_mipyme = True
+            usuario.save()
 
-            # 👇 LÓGICA DE GENERACIÓN DE USERNAME 👇
-            # 1. Generar el username único llamando a nuestra función
-            username_generado = generar_username_unico(
-                nombre=datos['first_name'],
-                apellido=datos['last_name']
-            )
-
-            # 2. Crear el Usuario Administrador con los datos correctos
-            usuario_admin = Usuario.objects.create_user(
-                username=username_generado,  # Usamos el username generado
-                email=datos['email'],
-                password=datos['password'],
-                first_name=datos['first_name'],  # Guardamos el nombre real
-                last_name=datos['last_name'],  # Guardamos el apellido real
-                # Campos personalizados
-                mipyme=nueva_mipyme,
-                es_admin_mipyme=True
-            )
-
-            # Iniciar sesión y redirigir (sin cambios)
-            login(request, usuario_admin)
             return redirect('produccion:panel')
     else:
-        form = RegistroMipymeForm()
+        form = SoloMipymeForm()
 
-    return render(request, 'cuentas/registro.html', {'form': form})
-
+    return render(request, 'cuentas/crear_mipyme_para_creador.html', {'form': form})
 
 @login_required
 def lista_usuarios_mipyme(request):
@@ -71,6 +51,64 @@ def lista_usuarios_mipyme(request):
     }
     # Usaremos una plantilla dentro de la app 'cuentas'
     return render(request, 'cuentas/lista_equipo.html', contexto)
+
+
+def pagina_seleccion_registro(request):
+    """
+    Muestra una página donde el usuario elige si registrarse como Creador o como Mipyme.
+    """
+    return render(request, 'cuentas/seleccion_registro.html')
+
+def registro_creador_view(request):
+    if request.method == 'POST':
+        form = RegistroCreadorForm(request.POST)
+        if form.is_valid():
+            datos = form.cleaned_data
+            # Creamos el usuario
+            username = generar_username_unico(datos['first_name'], datos['last_name'])
+            usuario = Usuario.objects.create_user(
+                username=username,
+                email=datos['email'],
+                password=datos['password'],
+                first_name=datos['first_name'],
+                last_name=datos['last_name'],
+                es_creador_contenido=True # ¡La clave está aquí!
+            )
+            login(request, usuario)
+            return redirect('marketplace_listado') # O a donde quieras dirigirlo
+    else:
+        form = RegistroCreadorForm()
+    return render(request, 'cuentas/registro_creador.html', {'form': form})
+
+
+def registro_mipyme_view(request):
+    if request.method == 'POST':
+        form = RegistroMipymeForm(request.POST)
+        if form.is_valid():
+            datos = form.cleaned_data
+            # 1. Crear la Mipyme
+            mipyme = Mipyme.objects.create(
+                nombre=datos['nombre_empresa'],
+                identificador_fiscal=datos.get('identificador_fiscal'),
+                tipo=datos['tipo_empresa']
+            )
+            # 2. Crear el Usuario Administrador
+            username = generar_username_unico(datos['first_name'], datos['last_name'])
+            admin_usuario = Usuario.objects.create_user(
+                username=username,
+                email=datos['email'],
+                password=datos['password'],
+                first_name=datos['first_name'],
+                last_name=datos['last_name'],
+                mipyme=mipyme, # Lo asociamos a la nueva Mipyme
+                es_admin_mipyme=True,
+                es_creador_contenido = True
+            )
+            login(request, admin_usuario)
+            return redirect('produccion:panel') # O al panel de la Mipyme
+    else:
+        form = RegistroMipymeForm()
+    return render(request, 'cuentas/registro_mipyme.html', {'form': form})
 
 
 @login_required
@@ -94,6 +132,8 @@ def crear_usuario_mipyme(request):
         'form': form,
     }
     return render(request, 'cuentas/crear_usuario_mipyme.html', contexto)
+
+
 
 @rol_requerido('ADMIN') # Solo un usuario con rol ADMIN (o el dueño) puede cambiar roles
 def gestionar_rol_usuario(request, usuario_id):

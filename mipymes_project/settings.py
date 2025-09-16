@@ -125,6 +125,6 @@ MEDIA_ROOT = BASE_DIR / 'media' # Buena práctica
 # --- Resto de la Configuración ---
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = 'cuentas.Usuario'
-LOGIN_REDIRECT_URL = 'produccion:panel'
+LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 LOGIN_URL = 'cuentas:login'

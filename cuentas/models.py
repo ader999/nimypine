@@ -41,6 +41,7 @@ class Usuario(AbstractUser):
 
     mipyme = models.ForeignKey(Mipyme, on_delete=models.CASCADE, related_name='usuarios', null=True, blank=True)
     es_admin_mipyme = models.BooleanField(default=False)  # Este es el "super-admin" de la Mipyme
+    es_creador_contenido = models.BooleanField(default=False)
 
     # --- 2. AÑADIMOS EL NUEVO CAMPO DE ROL ---
     rol = models.CharField(

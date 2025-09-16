@@ -10,8 +10,8 @@ class PlantillaExcel(models.Model):
     imagen_vista_previa = models.ImageField(upload_to='imagenes_plantillas/', blank=True, null=True, verbose_name="Imagen de Vista Previa")
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
-    # Es buena idea saber qué usuario creó la plantilla
-    #creador = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, related_name='plantillas_creadas')
+
+    creador = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, related_name='plantillas_creadas')
 
     def __str__(self):
         return self.nombre

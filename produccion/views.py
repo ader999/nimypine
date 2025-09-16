@@ -2,32 +2,28 @@
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Producto, Insumo, Formulacion # Importamos el modelo Producto
-from .forms import ProductoForm, FormulacionForm, InsumoForm, FormulacionUpdateForm
-from cuentas.decorators import rol_requerido
+from .models import Producto, Insumo, Formulacion, PasoDeProduccion, Proceso
+from .forms import ProductoForm, FormulacionForm, InsumoForm, FormulacionUpdateForm, ProcesoForm, PasoUpdateForm,PasoDeProduccionForm
+from cuentas.decorators import rol_requerido, mipyme_requerida
 
 
-# El decorador @login_required protege esta vista.
-# Si un usuario no autenticado intenta acceder, será redirigido a la página de login.
 @login_required
+@mipyme_requerida
 def panel_produccion(request):
     """
     Vista principal de la aplicación 'produccion'.
-    Carga el panel de control con las funcionalidades de negocio.
+    Solo accesible para usuarios con una Mipyme asociada.
     """
-    # Aquí puedes agregar lógica para obtener datos de la base de datos,
-    # como la lista de productos, para pasarla a la plantilla.
-    # Por ahora, la dejamos simple.
+    # Gracias al decorador, ahora podemos estar SEGUROS de que
+    # request.user.mipyme existe y no es None.
 
     contexto = {
         'titulo': 'Panel de Producción',
         'usuario': request.user,
-        'nombrepine': request.user.mipyme.nombre
+        'nombrepine': request.user.mipyme.nombre  # Ahora esta línea es segura
     }
 
-    # Renderiza la plantilla HTML que crearemos en el siguiente paso.
     return render(request, 'produccion/panel.html', contexto)
-
 @login_required
 def lista_productos(request):
     """
@@ -45,6 +41,7 @@ def lista_productos(request):
 
     contexto = {
         'productos': productos,
+        'nombrepine': request.user.mipyme.nombre
     }
     return render(request, 'produccion/lista_productos.html', contexto)
 
@@ -77,6 +74,7 @@ def crear_producto(request):
 
     contexto = {
         'form': form,
+        'nombrepine': request.user.mipyme.nombre
     }
     return render(request, 'produccion/crear_producto.html', contexto)
 
@@ -86,29 +84,48 @@ def detalle_producto(request, producto_id):
     producto = get_object_or_404(Producto, id=producto_id, mipyme=request.user.mipyme)
     mipyme_actual = request.user.mipyme
 
-    # Lógica para manejar el envío del formulario de añadir insumo
-    if request.method == 'POST':
-        form = FormulacionForm(request.POST, mipyme=mipyme_actual)
-        if form.is_valid():
-            # Evitar duplicados: Comprobar si ese insumo ya está en la receta
-            insumo_seleccionado = form.cleaned_data['insumo']
-            if not Formulacion.objects.filter(producto=producto, insumo=insumo_seleccionado).exists():
-                nuevo_item = form.save(commit=False)
-                nuevo_item.producto = producto  # Asignamos el producto actual
-                nuevo_item.save()
-            # Siempre redirigimos para evitar re-envío del formulario al recargar (Patrón PRG)
-            return redirect('produccion:detalle_producto', producto_id=producto.id)
-    else:
-        # Si es una petición GET, creamos un formulario vacío
-        form = FormulacionForm(mipyme=mipyme_actual)
+    # Inicializamos ambos formularios para pasarlos al contexto
+    form_insumo = FormulacionForm(mipyme=mipyme_actual)
+    form_proceso = PasoDeProduccionForm(mipyme=mipyme_actual)
 
-    # Obtenemos la lista de insumos de la formulación para mostrarla
+    if request.method == 'POST':
+        # Identificamos qué formulario se envió usando el nombre del botón 'submit'
+
+        # --- LÓGICA PARA EL FORMULARIO DE INSUMOS ---
+        if 'submit_insumo' in request.POST:
+            form_insumo = FormulacionForm(request.POST, mipyme=mipyme_actual)
+            if form_insumo.is_valid():
+                insumo_seleccionado = form_insumo.cleaned_data['insumo']
+                if not Formulacion.objects.filter(producto=producto, insumo=insumo_seleccionado).exists():
+                    nuevo_item = form_insumo.save(commit=False)
+                    nuevo_item.producto = producto
+                    nuevo_item.save()
+                # Redirigimos para limpiar el formulario y evitar reenvíos
+                return redirect('produccion:detalle_producto', producto_id=producto.id)
+
+        # --- LÓGICA PARA EL FORMULARIO DE PROCESOS ---
+        elif 'submit_proceso' in request.POST:
+            form_proceso = PasoDeProduccionForm(request.POST, mipyme=mipyme_actual)
+            if form_proceso.is_valid():
+                proceso_seleccionado = form_proceso.cleaned_data['proceso']
+                if not PasoDeProduccion.objects.filter(producto=producto, proceso=proceso_seleccionado).exists():
+                    nuevo_paso = form_proceso.save(commit=False)
+                    nuevo_paso.producto = producto
+                    nuevo_paso.save()
+                # Redirigimos para limpiar el formulario y evitar reenvíos
+                return redirect('produccion:detalle_producto', producto_id=producto.id)
+
+    # Obtenemos los items para mostrarlos en las tablas
     formulacion_items = Formulacion.objects.filter(producto=producto).order_by('insumo__nombre')
+    pasos_produccion = PasoDeProduccion.objects.filter(producto=producto).order_by('proceso__nombre')
 
     contexto = {
         'producto': producto,
         'formulacion_items': formulacion_items,
-        'form': form,  # Pasamos el formulario a la plantilla
+        'pasos_produccion': pasos_produccion,
+        'form_insumo': form_insumo,  # Pasamos el formulario de insumos
+        'form_proceso': form_proceso,  # Pasamos el formulario de procesos
+        'nombrepine': request.user.mipyme.nombre
     }
     return render(request, 'produccion/detalle_producto.html', contexto)
 
@@ -120,6 +137,7 @@ def lista_insumos(request):
     insumos = Insumo.objects.filter(mipyme=request.user.mipyme).order_by('nombre')
     contexto = {
         'insumos': insumos,
+        'nombrepine': request.user.mipyme.nombre
     }
     return render(request, 'produccion/lista_insumos.html', contexto)
 
@@ -141,6 +159,7 @@ def crear_insumo(request):
 
     contexto = {
         'form': form,
+        'nombrepine': request.user.mipyme.nombre
     }
     return render(request, 'produccion/crear_insumo.html', contexto)
 
@@ -165,6 +184,7 @@ def editar_producto(request, producto_id):
     contexto = {
         'form': form,
         'producto': producto, # Lo pasamos para usarlo en el título de la plantilla
+        'nombrepine': request.user.mipyme.nombre
     }
     # Reutilizaremos la plantilla de creación de productos
     return render(request, 'produccion/crear_producto.html', contexto)
@@ -239,6 +259,7 @@ def editar_formulacion_item(request, producto_id, item_id):
     contexto = {
         'form': form,
         'item': item,
+        'nombrepine': request.user.mipyme.nombre
     }
     return render(request, 'produccion/editar_formulacion_item.html', contexto)
 
@@ -264,6 +285,7 @@ def editar_insumo(request, insumo_id):
     contexto = {
         'form': form,
         'insumo': insumo, # Pasamos el insumo para poder usar su nombre en el título
+        'nombrepine': request.user.mipyme.nombre
     }
     # Reutilizaremos la plantilla de creación, ya que el formulario es el mismo
     return render(request, 'produccion/crear_insumo.html', contexto)
@@ -285,3 +307,111 @@ def eliminar_insumo(request, insumo_id):
 
     # Si alguien intenta acceder a la URL con GET, simplemente lo redirigimos
     return redirect('produccion:lista_insumos')
+
+
+# --- INICIO DE NUEVAS VISTAS PARA PROCESOS ---
+
+@login_required
+def lista_procesos(request):
+    """
+    Muestra una lista de todos los procesos de la Mipyme del usuario.
+    """
+    procesos = Proceso.objects.filter(mipyme=request.user.mipyme).order_by('nombre')
+    contexto = {
+        'procesos': procesos,
+        'nombrepine': request.user.mipyme.nombre
+    }
+    return render(request, 'produccion/lista_procesos.html', contexto)
+
+@login_required
+@rol_requerido('ADMIN', 'EDITOR')
+def crear_proceso(request):
+    """
+    Gestiona la creación de un nuevo proceso.
+    """
+    if request.method == 'POST':
+        form = ProcesoForm(request.POST)
+        if form.is_valid():
+            nuevo_proceso = form.save(commit=False)
+            nuevo_proceso.mipyme = request.user.mipyme
+            nuevo_proceso.save()
+            return redirect('produccion:lista_procesos')
+    else:
+        form = ProcesoForm()
+
+    contexto = {'form': form}
+    return render(request, 'produccion/crear_proceso.html', contexto)
+
+
+@login_required
+@rol_requerido('ADMIN', 'EDITOR')
+def editar_proceso(request, proceso_id):
+    """
+    Gestiona la edición de un proceso existente.
+    """
+    proceso = get_object_or_404(Proceso, id=proceso_id, mipyme=request.user.mipyme)
+    if request.method == 'POST':
+        form = ProcesoForm(request.POST, instance=proceso)
+        if form.is_valid():
+            form.save()
+            return redirect('produccion:lista_procesos')
+    else:
+        form = ProcesoForm(instance=proceso)
+    contexto = {'form': form, 'proceso': proceso}
+    return render(request, 'produccion/crear_proceso.html', contexto)
+
+
+@login_required
+@rol_requerido('ADMIN')
+def eliminar_proceso(request, proceso_id):
+    """
+    Elimina un proceso específico.
+    """
+    proceso_a_borrar = get_object_or_404(Proceso, id=proceso_id, mipyme=request.user.mipyme)
+    if request.method == 'POST':
+        proceso_a_borrar.delete()
+        return redirect('produccion:lista_procesos')
+    return redirect('produccion:lista_procesos')
+
+# --- FIN DE NUEVAS VISTAS PARA PROCESOS ---
+
+
+# --- INICIO DE NUEVAS VISTAS PARA PASOS DE PRODUCCIÓN ---
+
+@login_required
+def editar_paso_produccion(request, producto_id, paso_id):
+    """
+    Edita el tiempo de un proceso en la ruta de producción de un producto.
+    """
+    paso = get_object_or_404(
+        PasoDeProduccion, id=paso_id, producto__id=producto_id, producto__mipyme=request.user.mipyme
+    )
+    if request.method == 'POST':
+        form = PasoUpdateForm(request.POST, instance=paso)
+        if form.is_valid():
+            form.save()
+            return redirect('produccion:detalle_producto', producto_id=producto_id)
+    else:
+        form = PasoUpdateForm(instance=paso)
+
+    contexto = {'form': form,
+                'paso': paso,
+                'nombrepine': request.user.mipyme.nombre
+                }
+    return render(request, 'produccion/editar_paso_produccion.html', contexto)
+
+
+@login_required
+def eliminar_paso_produccion(request, producto_id, paso_id):
+    """
+    Elimina un proceso de la ruta de producción de un producto.
+    """
+    paso_a_borrar = get_object_or_404(
+        PasoDeProduccion, id=paso_id, producto__id=producto_id, producto__mipyme=request.user.mipyme
+    )
+    if request.method == 'POST':
+        paso_a_borrar.delete()
+        return redirect('produccion:detalle_producto', producto_id=producto_id)
+    return redirect('produccion:detalle_producto', producto_id=producto_id)
+
+# --- FIN DE NUEVAS VISTAS PARA PASOS DE PRODUCCIÓN ---

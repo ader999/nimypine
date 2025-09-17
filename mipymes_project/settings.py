@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     "cuentas",
     "marketplace",
     "produccion",
-    "storages",
+    "minio_storage",
 ]
 
 # --- Middleware ---
@@ -97,24 +97,34 @@ USE_TZ = True
 
 
 
-# --- AWS & MinIO Settings ---
-AWS_S3_ENDPOINT_URL = env('MINIO_S3_ENDPOINT_URL')
-AWS_ACCESS_KEY_ID = env('MINIO_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = env('MINIO_SECRET_ACCESS_KEY')
-AWS_STORAGE_BUCKET_NAME = env('MINIO_BUCKET_NAME')
-AWS_QUERYSTRING_AUTH = False
-AWS_S3_FILE_OVERWRITE = False
-AWS_DEFAULT_ACL = None
-
 # --- Archivos Estáticos (Static Files) - Servidos por WhiteNoise ---
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # --- Archivos Multimedia (Media Files) - Subidos a MinIO ---
-MEDIA_URL = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/media/'
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-MEDIA_ROOT = BASE_DIR / 'media' # Buena práctica
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Storage configuration for Django 5.2+
+STORAGES = {
+    "default": {
+        "BACKEND": "minio_storage.storage.MinioMediaStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+# Minio storage settings
+MINIO_STORAGE_ENDPOINT = env('MINIO_S3_ENDPOINT_URL')
+MINIO_STORAGE_ACCESS_KEY = env('MINIO_ACCESS_KEY_ID')
+MINIO_STORAGE_SECRET_KEY = env('MINIO_SECRET_ACCESS_KEY')
+MINIO_STORAGE_MEDIA_BUCKET_NAME = env('MINIO_BUCKET_NAME')
+MINIO_STORAGE_STATIC_BUCKET_NAME = env('MINIO_BUCKET_NAME')
+MINIO_STORAGE_USE_HTTPS = True
+MINIO_STORAGE_AUTO_CREATE_BUCKET = True
+MINIO_STORAGE_AUTO_CREATE_POLICY = True
+MINIO_STORAGE_MEDIA_USE_PRESIGNED = True
 
 
 

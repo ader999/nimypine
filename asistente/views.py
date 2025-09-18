@@ -10,6 +10,7 @@ from django.http import JsonResponse
 from django.db import connection
 from django.core.files.base import ContentFile
 from django.conf import settings
+from django.core.files.storage import default_storage
 from cuentas.models import Mipyme
 from produccion.models import Producto, Insumo, Venta, VentaItem
 from .models import Conversacion, Mensaje
@@ -134,7 +135,8 @@ def asistente_view(request):
             return JsonResponse({'respuesta': respuesta})
 
     mensajes = conversacion.mensajes.all().order_by('fecha')
-    return render(request, 'asistente/asistente.html', {'mensajes': mensajes})
+    avatar_url = default_storage.url('nimypine/material/sinfotouser.png')
+    return render(request, 'asistente/asistente.html', {'mensajes': mensajes, 'avatar_url': avatar_url})
 
 def procesar_mensaje(mensaje, user, model='openai'):
     mensaje_lower = mensaje.lower()

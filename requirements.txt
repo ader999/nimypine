@@ -18,4 +18,5 @@ typing_extensions==4.15.0
 urllib3==2.5.0
 whitenoise==6.10.0
 gunicorn==21.2.0
+paypalrestsdk==1.13.2
 

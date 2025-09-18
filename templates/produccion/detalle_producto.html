@@ -47,13 +47,43 @@
 
                             <!-- Sección de Inventario y Descripción -->
                             <tr>
+                                <td><strong>Sector</strong></td>
+                                <td>
+                                    {% if producto.mipyme.sector %}
+                                        <span class="badge bg-info">{{ producto.mipyme.sector.nombre }}</span>
+                                    {% else %}
+                                        <em>No asignado</em>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
                                 <td><strong>Stock Actual</strong></td>
                                 <td><strong>{{ producto.stock_actual }}</strong> unidades</td>
                             </tr>
                              <tr>
-                                <td><strong>Descripción</strong></td>
-                                <td>{{ producto.descripcion|default:"No especificada"|linebreaksbr }}</td>
-                            </tr>
+                                 <td><strong>Descripción</strong></td>
+                                 <td>{{ producto.descripcion|default:"No especificada"|linebreaksbr }}</td>
+                             </tr>
+                             <tr>
+                                 <td><strong>Peso</strong></td>
+                                 <td>{{ producto.peso|default:"No especificado"|floatformat:2 }} kg</td>
+                             </tr>
+                             <tr>
+                                 <td><strong>Dimensiones</strong></td>
+                                 <td>
+                                     {% if producto.tamano_largo or producto.tamano_ancho or producto.tamano_alto %}
+                                         {% if producto.tamano_largo %}Largo: {{ producto.tamano_largo|floatformat:2 }} cm{% endif %}
+                                         {% if producto.tamano_ancho %} x Ancho: {{ producto.tamano_ancho|floatformat:2 }} cm{% endif %}
+                                         {% if producto.tamano_alto %} x Alto: {{ producto.tamano_alto|floatformat:2 }} cm{% endif %}
+                                     {% else %}
+                                         No especificadas
+                                     {% endif %}
+                                 </td>
+                             </tr>
+                             <tr>
+                                 <td><strong>Presentación</strong></td>
+                                 <td>{{ producto.presentacion|default:"No especificada" }}</td>
+                             </tr>
                         </tbody>
                     </table>
                 </div>

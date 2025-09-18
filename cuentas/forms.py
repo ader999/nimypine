@@ -2,7 +2,7 @@
 
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import Usuario, Mipyme, TipoEmpresa
+from .models import Usuario, Mipyme, TipoEmpresa, SectorEconomico
 from .funciones import generar_username_unico
 
 
@@ -38,6 +38,12 @@ class RegistroMipymeForm(forms.Form):
         label="Tipo de Empresa",
         empty_label="Selecciona una categoría"
     )
+    sector_economico = forms.ModelChoiceField(
+        queryset=SectorEconomico.objects.all(),
+        required=True,
+        label="Sector Económico",
+        empty_label="Selecciona un sector"
+    )
 
     # --- Datos del Administrador (NUEVOS CAMPOS) ---
     # Eliminamos el campo 'username'
@@ -58,11 +64,12 @@ class RegistroMipymeForm(forms.Form):
 class SoloMipymeForm(forms.ModelForm):
     class Meta:
         model = Mipyme
-        fields = ['nombre', 'identificador_fiscal', 'tipo']
+        fields = ['nombre', 'identificador_fiscal', 'tipo', 'sector']
         labels = {
             'nombre': 'Nombre de tu Empresa',
             'identificador_fiscal': 'Identificador Fiscal (Opcional)',
-            'tipo': 'Tipo de Empresa'
+            'tipo': 'Tipo de Empresa',
+            'sector': 'Sector Económico'
         }
 
 

@@ -3,6 +3,18 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 
+class SectorEconomico(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+    descripcion = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        verbose_name = "Sector Económico"
+        verbose_name_plural = "Sectores Económicos"
+
+
 class TipoEmpresa(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
 
@@ -19,6 +31,7 @@ class Mipyme(models.Model):
     numero_telefono = models.CharField(max_length=20, null=True, blank=True)
     correo = models.EmailField(max_length=50, null=True, blank=True)
     tipo = models.ForeignKey(TipoEmpresa, on_delete=models.SET_NULL, null=True, verbose_name="Tipo de Empresa")
+    sector = models.ForeignKey(SectorEconomico, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Sector Económico")
     identificador_fiscal = models.CharField(
         max_length=80,
         unique=True,
@@ -29,6 +42,8 @@ class Mipyme(models.Model):
 
     def __str__(self):
         return f"{self.nombre} (ID: {self.id})"
+
+
 
 
 class Usuario(AbstractUser):

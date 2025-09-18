@@ -1,14 +1,15 @@
 # produccion/forms.py
 
 from django import forms
-from .models import Producto, Formulacion, Insumo, Proceso, PasoDeProduccion
+from django.core.exceptions import ValidationError
+from .models import Producto, Formulacion, Insumo, Proceso, PasoDeProduccion, EstándaresProducto
 
 class ProductoForm(forms.ModelForm):
     class Meta:
         model = Producto  # Le decimos al formulario que se base en el modelo Producto
 
         # Definimos los campos del modelo que queremos incluir en el formulario
-        fields = ['nombre', 'descripcion', 'precio_venta', 'stock_actual']
+        fields = ['nombre', 'descripcion', 'precio_venta', 'stock_actual', 'peso', 'tamano_largo', 'tamano_ancho', 'tamano_alto', 'presentacion']
 
         # Opcional: Personalizar las etiquetas y widgets para que se vean mejor con Bootstrap
         labels = {
@@ -16,13 +17,69 @@ class ProductoForm(forms.ModelForm):
             'descripcion': 'Descripción (opcional)',
             'precio_venta': 'Precio de Venta (PVP)',
             'stock_actual': 'Stock Inicial (unidades)',
+            'peso': 'Peso (kg)',
+            'tamano_largo': 'Largo (cm)',
+            'tamano_ancho': 'Ancho (cm)',
+            'tamano_alto': 'Alto (cm)',
+            'presentacion': 'Presentación',
         }
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Tarta de Chocolate'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'precio_venta': forms.NumberInput(attrs={'class': 'form-control'}),
             'stock_actual': forms.NumberInput(attrs={'class': 'form-control', 'value': 0}),
+            'peso': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 1.5'}),
+            'tamano_largo': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 30'}),
+            'tamano_ancho': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 20'}),
+            'tamano_alto': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 10'}),
+            'presentacion': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Bolsa de 500g'}),
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        mipyme = self.instance.mipyme if self.instance.pk else None
+        if not mipyme:
+            # If creating new, mipyme might be set in view, but for now assume instance has it
+            return cleaned_data
+
+        try:
+            estándares = self.instance.estándares
+        except EstándaresProducto.DoesNotExist:
+            return cleaned_data
+
+        # Validate peso
+        peso = cleaned_data.get('peso')
+        if peso is not None:
+            if estándares.peso_min is not None and peso < estándares.peso_min:
+                raise ValidationError(f"El peso ({peso} kg) es menor al estándar mínimo del sector ({estándares.peso_min} kg).")
+            if estándares.peso_max is not None and peso > estándares.peso_max:
+                raise ValidationError(f"El peso ({peso} kg) excede el estándar máximo del sector ({estándares.peso_max} kg).")
+
+        # Validate tamano_largo
+        tamano_largo = cleaned_data.get('tamano_largo')
+        if tamano_largo is not None:
+            if estándares.tamano_largo_min is not None and tamano_largo < estándares.tamano_largo_min:
+                raise ValidationError(f"El largo ({tamano_largo} cm) es menor al estándar mínimo del sector ({estándares.tamano_largo_min} cm).")
+            if estándares.tamano_largo_max is not None and tamano_largo > estándares.tamano_largo_max:
+                raise ValidationError(f"El largo ({tamano_largo} cm) excede el estándar máximo del sector ({estándares.tamano_largo_max} cm).")
+
+        # Similarly for ancho
+        tamano_ancho = cleaned_data.get('tamano_ancho')
+        if tamano_ancho is not None:
+            if estándares.tamano_ancho_min is not None and tamano_ancho < estándares.tamano_ancho_min:
+                raise ValidationError(f"El ancho ({tamano_ancho} cm) es menor al estándar mínimo del sector ({estándares.tamano_ancho_min} cm).")
+            if estándares.tamano_ancho_max is not None and tamano_ancho > estándares.tamano_ancho_max:
+                raise ValidationError(f"El ancho ({tamano_ancho} cm) excede el estándar máximo del sector ({estándares.tamano_ancho_max} cm).")
+
+        # Similarly for alto
+        tamano_alto = cleaned_data.get('tamano_alto')
+        if tamano_alto is not None:
+            if estándares.tamano_alto_min is not None and tamano_alto < estándares.tamano_alto_min:
+                raise ValidationError(f"El alto ({tamano_alto} cm) es menor al estándar mínimo del sector ({estándares.tamano_alto_min} cm).")
+            if estándares.tamano_alto_max is not None and tamano_alto > estándares.tamano_alto_max:
+                raise ValidationError(f"El alto ({tamano_alto} cm) excede el estándar máximo del sector ({estándares.tamano_alto_max} cm).")
+
+        return cleaned_data
 
 
 class FormulacionForm(forms.ModelForm):

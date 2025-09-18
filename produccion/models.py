@@ -43,6 +43,12 @@ class Producto(models.Model):
     mipyme = models.ForeignKey(Mipyme, on_delete=models.CASCADE, related_name="productos")
     precio_venta = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Precio al público
     stock_actual = models.IntegerField(default=0)  # Unidades de producto terminado en inventario
+    # --- NUEVOS CAMPOS PARA ESTANDARIZACIÓN ---
+    peso = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Peso (kg)")
+    tamano_largo = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Largo (cm)")
+    tamano_ancho = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Ancho (cm)")
+    tamano_alto = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Alto (cm)")
+    presentacion = models.CharField(max_length=200, blank=True, null=True, verbose_name="Presentación")
     # --- CAMPO MODIFICADO ---
     # Relacionamos los productos con los procesos a través de una tabla intermedia
     procesos = models.ManyToManyField(Proceso, through='PasoDeProduccion', related_name='productos')
@@ -118,3 +124,24 @@ class Formulacion(models.Model):
 
     def __str__(self):
         return f"{self.cantidad} {self.insumo.unidad.abreviatura} de {self.insumo.nombre} para {self.producto.nombre}"
+
+
+# Modelo para estándares por producto
+class EstándaresProducto(models.Model):
+    producto = models.OneToOneField(Producto, on_delete=models.CASCADE, related_name='estándares')
+    peso_min = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Peso Mínimo (kg)")
+    peso_max = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Peso Máximo (kg)")
+    tamano_largo_min = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Largo Mínimo (cm)")
+    tamano_largo_max = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Largo Máximo (cm)")
+    tamano_ancho_min = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Ancho Mínimo (cm)")
+    tamano_ancho_max = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Ancho Máximo (cm)")
+    tamano_alto_min = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Alto Mínimo (cm)")
+    tamano_alto_max = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Alto Máximo (cm)")
+    presentacion_estandar = models.CharField(max_length=200, blank=True, null=True, verbose_name="Presentación Estándar")
+
+    def __str__(self):
+        return f"Estándares para {self.producto.nombre}"
+
+    class Meta:
+        verbose_name = "Estándar de Producto"
+        verbose_name_plural = "Estándares de Productos"

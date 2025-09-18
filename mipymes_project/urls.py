@@ -11,6 +11,8 @@ urlpatterns = [
 
     path('marketplace/', include('marketplace.urls')),
 
+    path('asistente/', include('asistente.urls')),
+
     # Cualquier URL que no sea /admin/ la enviará al urls.py de la app 'cuentas'
     path('', include('cuentas.urls')),
 ]

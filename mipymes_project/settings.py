@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "cuentas",
     "marketplace",
     "produccion",
+    "asistente",
     "minio_storage",
 ]
 

@@ -45,4 +45,7 @@ urlpatterns = [
     path('procesos/editar/<int:proceso_id>/', views.editar_proceso, name='editar_proceso'),
     path('procesos/eliminar/<int:proceso_id>/', views.eliminar_proceso, name='eliminar_proceso'),
 
+    # --- VENTAS / FACTURACIÓN ---
+    path('ventas/registrar/', views.registrar_venta, name='registrar_venta'),
+    path('ventas/historial/', views.historial_ventas, name='historial_ventas'),
 ]

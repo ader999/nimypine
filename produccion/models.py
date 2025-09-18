@@ -145,3 +145,45 @@ class EstándaresProducto(models.Model):
     class Meta:
         verbose_name = "Estándar de Producto"
         verbose_name_plural = "Estándares de Productos"
+
+# --- MODELOS DE VENTAS (Facturación) ---
+
+class Venta(models.Model):
+    mipyme = models.ForeignKey(Mipyme, on_delete=models.CASCADE, related_name='ventas')
+    fecha = models.DateTimeField(auto_now_add=True)
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=decimal.Decimal('0.00'), editable=False)
+
+    class Meta:
+        verbose_name = "Venta"
+        verbose_name_plural = "Ventas"
+        ordering = ['-fecha']
+
+    def __str__(self):
+        return f"Venta #{self.id} - {self.mipyme} - {self.fecha.strftime('%Y-%m-%d %H:%M')}"
+
+    def calcular_total(self):
+        total = decimal.Decimal('0.00')
+        for item in self.items.all():
+            total += item.subtotal
+        self.total = total
+        self.save(update_fields=['total'])
+
+
+class VentaItem(models.Model):
+    venta = models.ForeignKey(Venta, on_delete=models.CASCADE, related_name='items')
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    cantidad = models.IntegerField(verbose_name="Cantidad")
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Precio unitario")
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
+
+    class Meta:
+        verbose_name = "Item de Venta"
+        verbose_name_plural = "Items de Venta"
+
+    def __str__(self):
+        return f"{self.producto.nombre} x {self.cantidad}"
+
+    def save(self, *args, **kwargs):
+        # Calcular subtotal automáticamente
+        self.subtotal = decimal.Decimal(self.cantidad) * self.precio_unitario
+        super().save(*args, **kwargs)

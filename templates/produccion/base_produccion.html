@@ -99,6 +99,20 @@
                 </a>
             </li>
 
+            <!-- --- VENTAS / FACTURACIÓN --- -->
+            <li>
+                <a href="{% url 'produccion:registrar_venta' %}" class="nav-link text-white">
+                    <i class="bi bi-cash-coin"></i>
+                    Registrar Venta
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'produccion:historial_ventas' %}" class="nav-link text-white">
+                    <i class="bi bi-receipt"></i>
+                    Historial de Ventas
+                </a>
+            </li>
+
             <li>
                 <a href="{% url 'cuentas:lista_equipo' %}" class="nav-link text-white">
                     <i class="bi bi-people-fill"></i>

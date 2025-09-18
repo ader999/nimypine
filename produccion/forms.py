@@ -2,7 +2,8 @@
 
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import Producto, Formulacion, Insumo, Proceso, PasoDeProduccion, EstándaresProducto
+from django.forms import modelformset_factory
+from .models import Producto, Formulacion, Insumo, Proceso, PasoDeProduccion, EstándaresProducto, Venta, VentaItem
 
 class ProductoForm(forms.ModelForm):
     class Meta:
@@ -189,3 +190,42 @@ class CalculadoraLotesForm(forms.Form):
         label="Cantidad de Unidades Deseadas",
         widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 100'})
     )
+
+
+# --- FACTURACIÓN: Formularios de Venta ---
+
+class VentaItemForm(forms.ModelForm):
+    class Meta:
+        model = VentaItem
+        fields = ['producto', 'cantidad']
+        labels = {
+            'producto': 'Producto',
+            'cantidad': 'Cantidad',
+        }
+        widgets = {
+            'producto': forms.Select(attrs={'class': 'form-select'}),
+            'cantidad': forms.NumberInput(attrs={'class': 'form-control cantidad-input', 'min': 1, 'value': 1}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        mipyme = kwargs.pop('mipyme', None)
+        super().__init__(*args, **kwargs)
+        if mipyme:
+            self.fields['producto'].queryset = Producto.objects.filter(mipyme=mipyme).order_by('nombre')
+
+    def clean(self):
+        cleaned_data = super().clean()
+        producto = cleaned_data.get('producto')
+        cantidad = cleaned_data.get('cantidad')
+        if producto and cantidad:
+            if cantidad > producto.stock_actual:
+                raise ValidationError(f"No hay suficiente stock para {producto.nombre}. Stock disponible: {producto.stock_actual} unidades.")
+        return cleaned_data
+
+
+VentaItemFormSet = modelformset_factory(
+    VentaItem,
+    form=VentaItemForm,
+    extra=1,
+    can_delete=True,
+)

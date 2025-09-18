@@ -1,10 +1,11 @@
 # produccion/views.py
 
 import decimal
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Producto, Insumo, Formulacion, PasoDeProduccion, Proceso
-from .forms import ProductoForm, FormulacionForm, InsumoForm, FormulacionUpdateForm, ProcesoForm, PasoUpdateForm, PasoDeProduccionForm, CalculadoraLotesForm
+from .models import Producto, Insumo, Formulacion, PasoDeProduccion, Proceso, Venta, VentaItem
+from .forms import ProductoForm, FormulacionForm, InsumoForm, FormulacionUpdateForm, ProcesoForm, PasoUpdateForm, PasoDeProduccionForm, CalculadoraLotesForm, VentaItemFormSet
 from cuentas.decorators import rol_requerido, mipyme_requerida
 
 
@@ -478,3 +479,144 @@ def calculadora_lotes(request, producto_id):
     return render(request, 'produccion/calculadora_lotes.html', contexto)
 
 # --- FIN DE CALCULADORA ---
+
+
+# --- INICIO DE VENTAS (FACTURACIÓN) ---
+
+@login_required
+@mipyme_requerida
+def registrar_venta(request):
+    """
+    Registrar una nueva venta con múltiples productos usando un ModelFormSet de VentaItem.
+    Realiza:
+     - Validación de stock
+     - Resta automática del stock
+     - Cálculo de subtotales y total
+     - Devuelve datos para modal de confirmación e impresión
+    """
+    # Datos de productos para JS
+    productos = Producto.objects.filter(mipyme=request.user.mipyme).values('id', 'nombre', 'precio_venta')
+    productos_data = {
+        str(p['id']): {'nombre': p['nombre'], 'precio_venta': float(p['precio_venta'])}
+        for p in productos
+    }
+    productos_json = json.dumps(productos_data)
+
+    if request.method == 'POST':
+        formset = VentaItemFormSet(
+            request.POST,
+            form_kwargs={'mipyme': request.user.mipyme},
+            queryset=VentaItem.objects.none()
+        )
+        if formset.is_valid():
+            venta = Venta.objects.create(mipyme=request.user.mipyme)
+            items_data = []
+            total_items = 0
+
+            for form in formset:
+                if not form.cleaned_data or form.cleaned_data.get('DELETE'):
+                    continue
+
+                producto = form.cleaned_data['producto']
+                cantidad = form.cleaned_data['cantidad']
+
+                # Validación de stock por seguridad (además del clean del form)
+                if cantidad > producto.stock_actual:
+                    venta.delete()
+                    contexto = {
+                        'formset': formset,
+                        'titulo': 'Registrar Venta',
+                        'nombrepine': request.user.mipyme.nombre,
+                        'productos_json': productos_json,
+                        'error': f"No hay suficiente stock para {producto.nombre}. Stock disponible: {producto.stock_actual} unidades."
+                    }
+                    return render(request, 'produccion/registrar_venta.html', contexto)
+
+                # Crear item con precio actual del producto
+                item = VentaItem(
+                    venta=venta,
+                    producto=producto,
+                    cantidad=cantidad,
+                    precio_unitario=producto.precio_venta
+                )
+                item.save()
+
+                # Restar del stock del producto
+                producto.stock_actual -= cantidad
+                producto.save(update_fields=['stock_actual'])
+
+                items_data.append({
+                    'producto': producto.nombre,
+                    'cantidad': cantidad,
+                    'precio_unitario': float(item.precio_unitario),
+                    'subtotal': float(item.subtotal),
+                })
+                total_items += 1
+
+            if total_items == 0:
+                venta.delete()
+                contexto = {
+                    'formset': formset,
+                    'titulo': 'Registrar Venta',
+                    'nombrepine': request.user.mipyme.nombre,
+                    'productos_json': productos_json,
+                    'error': 'Debe agregar al menos un producto a la venta.'
+                }
+                return render(request, 'produccion/registrar_venta.html', contexto)
+
+            # Calcular total de la venta
+            venta.calcular_total()
+
+            venta_dict = {
+                'id': venta.id,
+                'fecha': venta.fecha.strftime('%d/%m/%Y %H:%M'),
+                'total': float(venta.total),
+                'items': items_data
+            }
+            venta_json = json.dumps(venta_dict)
+
+            # Render con formulario limpio, datos para modal y JSON embebido
+            contexto = {
+                'formset': VentaItemFormSet(queryset=VentaItem.objects.none(), form_kwargs={'mipyme': request.user.mipyme}),
+                'titulo': 'Registrar Venta',
+                'nombrepine': request.user.mipyme.nombre,
+                'productos_json': productos_json,
+                'venta_exitosa': True,
+                'venta_json': venta_json,
+            }
+            return render(request, 'produccion/registrar_venta.html', contexto)
+        else:
+            contexto = {
+                'formset': formset,
+                'titulo': 'Registrar Venta',
+                'nombrepine': request.user.mipyme.nombre,
+                'productos_json': productos_json,
+            }
+            return render(request, 'produccion/registrar_venta.html', contexto)
+
+    # GET
+    formset = VentaItemFormSet(queryset=VentaItem.objects.none(), form_kwargs={'mipyme': request.user.mipyme})
+    contexto = {
+        'formset': formset,
+        'titulo': 'Registrar Venta',
+        'nombrepine': request.user.mipyme.nombre,
+        'productos_json': productos_json,
+    }
+    return render(request, 'produccion/registrar_venta.html', contexto)
+
+
+@login_required
+@mipyme_requerida
+def historial_ventas(request):
+    """
+    Lista el historial de ventas de la MIPYME.
+    """
+    ventas = Venta.objects.filter(mipyme=request.user.mipyme).prefetch_related('items__producto').order_by('-fecha')
+    contexto = {
+        'ventas': ventas,
+        'titulo': 'Historial de Ventas',
+        'nombrepine': request.user.mipyme.nombre,
+    }
+    return render(request, 'produccion/historial_ventas.html', contexto)
+
+# --- FIN DE VENTAS ---

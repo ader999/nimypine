@@ -14,6 +14,7 @@ urlpatterns = [
     path('productos/', views.lista_productos, name='lista_productos'),
     path('productos/nuevo/', views.crear_producto, name='crear_producto'),
     path('productos/<int:producto_id>/', views.detalle_producto, name='detalle_producto'),
+    path('productos/<int:producto_id>/calculadora/', views.calculadora_lotes, name='calculadora_lotes'),
 # --- NUEVA URL PARA EDITAR UN PRODUCTO ---
     path('productos/editar/<int:producto_id>/', views.editar_producto, name='editar_producto'),
 # --- NUEVA URL PARA ELIMINAR UN PRODUCTO ---

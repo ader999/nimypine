@@ -132,8 +132,9 @@
         <!-- Encabezado con información -->
         <div class="header-info d-flex justify-content-between align-items-center">
             <h1 class="h3">{% block page_title %}Título de la Página{% endblock %}</h1>
-            <div>
-                <span>Bienvenido, <strong>{{ request.user.username }}</strong></span>
+            <div class="d-flex align-items-center">
+                {% block extra_buttons %}{% endblock %}
+                <span class="ms-3">Bienvenido, <strong>{{ request.user.username }}</strong></span>
             </div>
         </div>
 

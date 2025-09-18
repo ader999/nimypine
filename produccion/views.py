@@ -1,9 +1,10 @@
 # produccion/views.py
 
+import decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Producto, Insumo, Formulacion, PasoDeProduccion, Proceso
-from .forms import ProductoForm, FormulacionForm, InsumoForm, FormulacionUpdateForm, ProcesoForm, PasoUpdateForm,PasoDeProduccionForm
+from .forms import ProductoForm, FormulacionForm, InsumoForm, FormulacionUpdateForm, ProcesoForm, PasoUpdateForm, PasoDeProduccionForm, CalculadoraLotesForm
 from cuentas.decorators import rol_requerido, mipyme_requerida
 
 
@@ -415,3 +416,65 @@ def eliminar_paso_produccion(request, producto_id, paso_id):
     return redirect('produccion:detalle_producto', producto_id=producto_id)
 
 # --- FIN DE NUEVAS VISTAS PARA PASOS DE PRODUCCIÓN ---
+
+
+@login_required
+def calculadora_lotes(request, producto_id):
+    """
+    Calculadora para estimar cantidades de insumos y costos para un lote de producción.
+    """
+    producto = get_object_or_404(Producto, id=producto_id, mipyme=request.user.mipyme)
+
+    resultados = None
+    costo_total_insumos = 0
+    costo_total_procesos = 0
+    ingresos_estimados = 0
+    ganancia_estimada = 0
+
+    if request.method == 'POST':
+        form = CalculadoraLotesForm(request.POST)
+        if form.is_valid():
+            cantidad_unidades = form.cleaned_data['cantidad_unidades']
+
+            # Calcular insumos para el lote
+            resultados = []
+            for item in producto.formulacion.all():
+                cantidad_total = item.cantidad * cantidad_unidades
+                costo_unitario = item.insumo.costo_unitario
+                costo_con_desperdicio = cantidad_total * costo_unitario * (1 + (item.porcentaje_desperdicio / 100))
+                costo_total_insumos += costo_con_desperdicio
+                resultados.append({
+                    'insumo': item.insumo.nombre,
+                    'unidad': item.insumo.unidad.abreviatura,
+                    'cantidad_por_unidad': item.cantidad,
+                    'cantidad_total': cantidad_total,
+                    'costo': costo_con_desperdicio,
+                })
+
+            # Calcular procesos para el lote
+            for paso in producto.pasodeproduccion_set.all():
+                costo_proceso_lote = (decimal.Decimal(paso.tiempo_en_minutos) / 60) * paso.proceso.costo_por_hora * cantidad_unidades
+                costo_total_procesos += costo_proceso_lote
+
+            # Calcular ingresos y ganancia
+            ingresos_estimados = producto.precio_venta * cantidad_unidades
+            ganancia_estimada = producto.margen_de_ganancia * cantidad_unidades
+    else:
+        form = CalculadoraLotesForm()
+
+    costo_total = costo_total_insumos + costo_total_procesos
+
+    contexto = {
+        'producto': producto,
+        'form': form,
+        'resultados': resultados,
+        'costo_total_insumos': costo_total_insumos,
+        'costo_total_procesos': costo_total_procesos,
+        'costo_total': costo_total,
+        'ingresos_estimados': ingresos_estimados,
+        'ganancia_estimada': ganancia_estimada,
+        'nombrepine': request.user.mipyme.nombre
+    }
+    return render(request, 'produccion/calculadora_lotes.html', contexto)
+
+# --- FIN DE CALCULADORA ---

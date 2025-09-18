@@ -181,3 +181,11 @@ class PasoUpdateForm(forms.ModelForm):
         widgets = {
             'tiempo_en_minutos': forms.NumberInput(attrs={'class': 'form-control'}),
         }
+
+
+class CalculadoraLotesForm(forms.Form):
+    cantidad_unidades = forms.IntegerField(
+        min_value=1,
+        label="Cantidad de Unidades Deseadas",
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 100'})
+    )

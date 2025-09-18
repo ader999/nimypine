@@ -5,6 +5,12 @@
 
 {% block page_title %}Detalle de Producto: {{ producto.nombre }}{% endblock %}
 
+{% block extra_buttons %}
+<a href="{% url 'produccion:calculadora_lotes' producto.id %}" class="btn btn-info">
+    <i class="bi bi-calculator me-1"></i> Calculadora de Lotes
+</a>
+{% endblock %}
+
 {% block content %}
 <!-- Fila para Resumen del Producto en formato de tabla -->
 <div class="row mb-4">

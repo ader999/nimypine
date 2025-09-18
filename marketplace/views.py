@@ -3,8 +3,19 @@ from django.shortcuts import render
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from .models import PlantillaExcel  # Importamos el modelo de esta misma app
+from django.http import HttpResponse
+from django.conf import settings
+from django.urls import reverse
+import paypalrestsdk
+from .models import PlantillaExcel, Purchase  # Importamos el modelo de esta misma app
 from .forms import PlantillaExcelForm
+
+# Configurar PayPal
+paypalrestsdk.configure({
+    "mode": settings.PAYPAL_MODE,  # sandbox or live
+    "client_id": settings.PAYPAL_CLIENT_ID,
+    "client_secret": settings.PAYPAL_CLIENT_SECRET
+})
 
 def listado_plantillas(request):
     """
@@ -29,8 +40,14 @@ def detalle_plantilla(request, plantilla_id):
     # Obtenemos la plantilla por su ID, o mostramos un error 404 si no existe
     plantilla = get_object_or_404(PlantillaExcel, pk=plantilla_id)
 
+    # Verificar si el usuario ha comprado esta plantilla
+    ha_comprado = False
+    if request.user.is_authenticated:
+        ha_comprado = Purchase.objects.filter(usuario=request.user, plantilla=plantilla).exists()
+
     contexto = {
-        'plantilla': plantilla
+        'plantilla': plantilla,
+        'ha_comprado': ha_comprado
     }
 
     return render(request, 'marketplace/detalle_plantilla.html', contexto)
@@ -58,3 +75,116 @@ def subir_plantilla_view(request):
         form = PlantillaExcelForm()
 
     return render(request, 'marketplace/subir_plantilla.html', {'form': form})
+
+@login_required
+def descargar_plantilla(request, plantilla_id):
+    plantilla = get_object_or_404(PlantillaExcel, pk=plantilla_id)
+
+    # Verificar si el usuario ya ha comprado esta plantilla
+    if Purchase.objects.filter(usuario=request.user, plantilla=plantilla).exists():
+        # Ya pagado, descargar directamente
+        response = HttpResponse(plantilla.archivo_plantilla, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename="{plantilla.nombre}.xlsx"'
+        return response
+
+    if plantilla.precio is None or plantilla.precio == 0:
+        # Descarga gratuita
+        response = HttpResponse(plantilla.archivo_plantilla, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename="{plantilla.nombre}.xlsx"'
+        return response
+    else:
+        # Pago requerido
+        payment = paypalrestsdk.Payment({
+            "intent": "sale",
+            "payer": {
+                "payment_method": "paypal"
+            },
+            "redirect_urls": {
+                "return_url": request.build_absolute_uri(reverse('marketplace_pago_exitoso', args=[plantilla_id])),
+                "cancel_url": request.build_absolute_uri(reverse('marketplace_pago_cancelado', args=[plantilla_id]))
+            },
+            "transactions": [{
+                "item_list": {
+                    "items": [{
+                        "name": plantilla.nombre,
+                        "sku": str(plantilla.id),
+                        "price": str(plantilla.precio),
+                        "currency": "USD",
+                        "quantity": 1
+                    }]
+                },
+                "amount": {
+                    "total": str(plantilla.precio),
+                    "currency": "USD"
+                },
+                "description": f"Compra de plantilla: {plantilla.nombre}"
+            }]
+        })
+
+        if payment.create():
+            # Guardar payment_id en sesión para verificar después
+            request.session[f'paypal_payment_id_{plantilla_id}'] = payment.id
+            for link in payment.links:
+                if link.rel == "approval_url":
+                    return redirect(link.href)
+        else:
+            # Error al crear pago
+            return render(request, 'marketplace/detalle_plantilla.html', {
+                'plantilla': plantilla,
+                'error': 'Error al procesar el pago. Inténtalo de nuevo.'
+            })
+
+@login_required
+def pago_exitoso(request, plantilla_id):
+    plantilla = get_object_or_404(PlantillaExcel, pk=plantilla_id)
+    payment_id = request.session.get(f'paypal_payment_id_{plantilla_id}')
+    payer_id = request.GET.get('PayerID')
+
+    if payment_id and payer_id:
+        payment = paypalrestsdk.Payment.find(payment_id)
+        if payment.execute({"payer_id": payer_id}):
+            # Pago exitoso, crear registro de compra
+            transaction_id = None
+            for transaction in payment.transactions:
+                if hasattr(transaction, 'related_resources'):
+                    for resource in transaction.related_resources:
+                        if hasattr(resource, 'sale') and resource.sale:
+                            transaction_id = resource.sale.id
+                            break
+
+            Purchase.objects.create(
+                usuario=request.user,
+                plantilla=plantilla,
+                paypal_payment_id=payment_id,
+                paypal_transaction_id=transaction_id,
+                amount=plantilla.precio
+            )
+
+            # Limpiar sesión
+            del request.session[f'paypal_payment_id_{plantilla_id}']
+
+            # Descargar archivo
+            response = HttpResponse(plantilla.archivo_plantilla, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response['Content-Disposition'] = f'attachment; filename="{plantilla.nombre}.xlsx"'
+            return response
+        else:
+            return render(request, 'marketplace/detalle_plantilla.html', {
+                'plantilla': plantilla,
+                'error': 'Error al ejecutar el pago.'
+            })
+    else:
+        return render(request, 'marketplace/detalle_plantilla.html', {
+            'plantilla': plantilla,
+            'error': 'Pago no autorizado.'
+        })
+
+@login_required
+def pago_cancelado(request, plantilla_id):
+    plantilla = get_object_or_404(PlantillaExcel, pk=plantilla_id)
+    # Limpiar sesión si existe
+    if f'paypal_payment_id_{plantilla_id}' in request.session:
+        del request.session[f'paypal_payment_id_{plantilla_id}']
+    return render(request, 'marketplace/detalle_plantilla.html', {
+        'plantilla': plantilla,
+        'error': 'Pago cancelado.'
+    })

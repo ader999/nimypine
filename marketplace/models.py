@@ -13,8 +13,26 @@ class PlantillaExcel(models.Model):
 
     creador = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, related_name='plantillas_creadas')
 
+    precio = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Precio")
+
     def __str__(self):
         return self.nombre
+
+class Purchase(models.Model):
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='purchases')
+    plantilla = models.ForeignKey(PlantillaExcel, on_delete=models.CASCADE, related_name='purchases')
+    paypal_payment_id = models.CharField(max_length=100, unique=True)
+    paypal_transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    fecha_compra = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.usuario.username} - {self.plantilla.nombre}"
+
+    class Meta:
+        unique_together = ('usuario', 'plantilla')
+        verbose_name = "Compra"
+        verbose_name_plural = "Compras"
 
     class Meta:
         verbose_name = "Plantilla de Excel"

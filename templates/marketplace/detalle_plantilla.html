@@ -36,6 +36,13 @@
 
             <hr>
 
+            <!-- Precio -->
+            {% if plantilla.precio and plantilla.precio > 0 %}
+            <h4 class="mt-4 text-success">Precio: ${{ plantilla.precio }}</h4>
+            {% else %}
+            <h4 class="mt-4 text-success">Gratuito</h4>
+            {% endif %}
+
             <!-- Descripción -->
             <h4 class="mt-4">Descripción</h4>
             <p>{{ plantilla.descripcion|linebreaks }}</p>
@@ -49,9 +56,27 @@
             <!-- Botones de Acción -->
             <div class="d-grid gap-2 mt-5">
                 {% if plantilla.archivo_plantilla %}
-                    <a href="{{ plantilla.archivo_plantilla.url }}" class="btn btn-success btn-lg" download>
-                        <i class="bi bi-download me-2"></i>Descargar Plantilla
-                    </a>
+                    {% if user.is_authenticated %}
+                        {% if plantilla.precio and plantilla.precio > 0 %}
+                            {% if ha_comprado %}
+                                <a href="{% url 'marketplace_descargar' plantilla.id %}" class="btn btn-success btn-lg">
+                                    <i class="bi bi-download me-2"></i>Descargar Plantilla (Ya Pagada)
+                                </a>
+                            {% else %}
+                                <a href="{% url 'marketplace_descargar' plantilla.id %}" class="btn btn-success btn-lg">
+                                    <i class="bi bi-download me-2"></i>Comprar y Descargar Plantilla
+                                </a>
+                            {% endif %}
+                        {% else %}
+                            <a href="{% url 'marketplace_descargar' plantilla.id %}" class="btn btn-success btn-lg">
+                                <i class="bi bi-download me-2"></i>Descargar Plantilla
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-success btn-lg">
+                            <i class="bi bi-download me-2"></i>Iniciar Sesión para Descargar
+                        </a>
+                    {% endif %}
                 {% else %}
                     <button class="btn btn-secondary btn-lg" disabled>
                         <i class="bi bi-x-circle-fill me-2"></i>Archivo no disponible

@@ -6,6 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.conf import settings
 from django.urls import reverse
+from decimal import Decimal
 import paypalrestsdk
 from .models import PlantillaExcel, Purchase  # Importamos el modelo de esta misma app
 from .forms import PlantillaExcelForm
@@ -202,14 +203,18 @@ def perfil_creador(request):
     # Descargas totales de plantillas gratuitas
     descargas_gratuitas = sum(p.downloads for p in mis_plantillas.filter(precio__lte=0))
 
-    # Dinero acumulado
-    dinero_acumulado = sum(v.amount for v in ventas)
+    # Cálculos de ganancias
+    total_ventas = sum(v.amount for v in ventas)
+    comision_nimypines = total_ventas * Decimal('0.3')
+    ganancias_netas = total_ventas * Decimal('0.7')
 
     contexto = {
         'mis_plantillas': mis_plantillas,
         'ventas': ventas,
         'descargas_gratuitas': descargas_gratuitas,
-        'dinero_acumulado': dinero_acumulado,
+        'total_ventas': total_ventas,
+        'comision_nimypines': comision_nimypines,
+        'ganancias_netas': ganancias_netas,
     }
 
     return render(request, 'marketplace/perfil.html', contexto)

@@ -11,15 +11,32 @@
 
                 <!-- Estadísticas -->
                 <div class="row mb-4">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="card text-center">
                             <div class="card-body">
-                                <h5 class="card-title">Dinero Acumulado</h5>
-                                <p class="card-text display-6">${{ dinero_acumulado }}</p>
+                                <h5 class="card-title">TotalVentas</h5>
+                                
+                                <p class="card-text display-6">${{ total_ventas }}</p>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">Comisión (30%)</h5>
+                                <p class="card-text display-6 text-warning">${{ comision_nimypines }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">Ganancias Netas</h5>
+                                <p class="card-text display-6 text-success">${{ ganancias_netas }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
                         <div class="card text-center">
                             <div class="card-body">
                                 <h5 class="card-title">Descargas Gratuitas</h5>
@@ -27,14 +44,10 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="card text-center">
-                            <div class="card-body">
-                                <h5 class="card-title">Plantillas Subidas</h5>
-                                <p class="card-text display-6">{{ mis_plantillas|length }}</p>
-                            </div>
-                        </div>
-                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <strong>Nota:</strong> NIMYPINES retiene el 30% de las ventas como comisión. Tú recibes el 70% restante.
                 </div>
 
                 <!-- Mis Plantillas -->

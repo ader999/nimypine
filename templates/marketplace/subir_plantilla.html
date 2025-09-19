@@ -53,6 +53,13 @@
                         {% if form.imagen_vista_previa.errors %}<div class="text-danger small mt-1">{{ form.imagen_vista_previa.errors.as_text }}</div>{% endif %}
                     </div>
 
+                    <div class="mb-3">
+                        <label for="{{ form.precio.id_for_label }}" class="form-label">{{ form.precio.label }}</label>
+                        {{ form.precio }}
+                        <small class="form-text text-muted">Ingresa un precio entre 0.2 y 20 dolares</small>
+                        {% if form.precio.errors %}<div class="text-danger small mt-1">{{ form.precio.errors.as_text }}</div>{% endif %}
+                    </div>
+
                     <div class="d-grid mt-4">
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="bi bi-cloud-arrow-up-fill me-2"></i> Subir y Publicar Plantilla

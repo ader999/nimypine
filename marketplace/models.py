@@ -14,6 +14,7 @@ class PlantillaExcel(models.Model):
     creador = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, related_name='plantillas_creadas')
 
     precio = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Precio")
+    downloads = models.PositiveIntegerField(default=0, verbose_name="Descargas")
 
     def __str__(self):
         return self.nombre

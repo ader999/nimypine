@@ -12,5 +12,6 @@ urlpatterns = [
     path('<int:plantilla_id>/descargar/', views.descargar_plantilla, name='marketplace_descargar'),
     path('pago_exitoso/<int:plantilla_id>/', views.pago_exitoso, name='marketplace_pago_exitoso'),
     path('pago_cancelado/<int:plantilla_id>/', views.pago_cancelado, name='marketplace_pago_cancelado'),
+    path('perfil/', views.perfil_creador, name='marketplace_perfil'),
 
 ]

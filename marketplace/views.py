@@ -89,6 +89,8 @@ def descargar_plantilla(request, plantilla_id):
 
     if plantilla.precio is None or plantilla.precio == 0:
         # Descarga gratuita
+        plantilla.downloads += 1
+        plantilla.save()
         response = HttpResponse(plantilla.archivo_plantilla, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         response['Content-Disposition'] = f'attachment; filename="{plantilla.nombre}.xlsx"'
         return response
@@ -188,3 +190,26 @@ def pago_cancelado(request, plantilla_id):
         'plantilla': plantilla,
         'error': 'Pago cancelado.'
     })
+
+@login_required
+def perfil_creador(request):
+    # Plantillas subidas por el usuario
+    mis_plantillas = PlantillaExcel.objects.filter(creador=request.user)
+
+    # Compras de las plantillas del usuario (ventas)
+    ventas = Purchase.objects.filter(plantilla__creador=request.user).select_related('plantilla', 'usuario')
+
+    # Descargas totales de plantillas gratuitas
+    descargas_gratuitas = sum(p.downloads for p in mis_plantillas.filter(precio__lte=0))
+
+    # Dinero acumulado
+    dinero_acumulado = sum(v.amount for v in ventas)
+
+    contexto = {
+        'mis_plantillas': mis_plantillas,
+        'ventas': ventas,
+        'descargas_gratuitas': descargas_gratuitas,
+        'dinero_acumulado': dinero_acumulado,
+    }
+
+    return render(request, 'marketplace/perfil.html', contexto)

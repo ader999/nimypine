@@ -136,7 +136,7 @@ def asistente_view(request):
 
     mensajes = conversacion.mensajes.all().order_by('fecha')
     avatar_url = default_storage.url('nimypine/material/sinfotouser.png')
-    return render(request, 'asistente/asistente.html', {'mensajes': mensajes, 'avatar_url': avatar_url})
+    return render(request, 'asistente/asistente.html', {'mensajes': mensajes, 'avatar_url': avatar_url,         'nombrepine': request.user.mipyme.nombre})
 
 def procesar_mensaje(mensaje, user, model='openai'):
     mensaje_lower = mensaje.lower()

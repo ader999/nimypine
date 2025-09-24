@@ -10,13 +10,13 @@ class ProductoForm(forms.ModelForm):
         model = Producto  # Le decimos al formulario que se base en el modelo Producto
 
         # Definimos los campos del modelo que queremos incluir en el formulario
-        fields = ['nombre', 'descripcion', 'precio_venta', 'stock_actual', 'peso', 'tamano_largo', 'tamano_ancho', 'tamano_alto', 'presentacion']
+        fields = ['nombre', 'descripcion', 'porcentaje_ganancia', 'stock_actual', 'peso', 'tamano_largo', 'tamano_ancho', 'tamano_alto', 'presentacion']
 
         # Opcional: Personalizar las etiquetas y widgets para que se vean mejor con Bootstrap
         labels = {
             'nombre': 'Nombre del Producto',
             'descripcion': 'Descripción (opcional)',
-            'precio_venta': 'Precio de Venta (PVP)',
+            'porcentaje_ganancia': 'Porcentaje de Ganancia (%)',
             'stock_actual': 'Stock Inicial (unidades)',
             'peso': 'Peso (kg)',
             'tamano_largo': 'Largo (cm)',
@@ -27,7 +27,7 @@ class ProductoForm(forms.ModelForm):
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Tarta de Chocolate'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'precio_venta': forms.NumberInput(attrs={'class': 'form-control'}),
+            'porcentaje_ganancia': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 20'}),
             'stock_actual': forms.NumberInput(attrs={'class': 'form-control', 'value': 0}),
             'peso': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 1.5'}),
             'tamano_largo': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 30'}),

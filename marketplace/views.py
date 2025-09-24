@@ -33,7 +33,7 @@ def listado_plantillas(request):
     # Renderizamos la plantilla, que ahora está en la ruta namespaced
     return render(request, 'marketplace/listado_plantillas.html', contexto)
 
-
+@login_required
 def detalle_plantilla(request, plantilla_id):
     """
     Esta vista muestra los detalles de una plantilla específica.

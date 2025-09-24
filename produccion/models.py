@@ -41,7 +41,8 @@ class Producto(models.Model):
     nombre = models.CharField(max_length=200, unique=True)
     descripcion = models.TextField(blank=True, null=True)
     mipyme = models.ForeignKey(Mipyme, on_delete=models.CASCADE, related_name="productos")
-    precio_venta = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Precio al público
+    precio_venta = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Precio al público (calculado automáticamente)
+    porcentaje_ganancia = models.DecimalField(max_digits=5, decimal_places=2, default=0.00, verbose_name="Porcentaje de Ganancia (%)")
     stock_actual = models.IntegerField(default=0)  # Unidades de producto terminado en inventario
     # --- NUEVOS CAMPOS PARA ESTANDARIZACIÓN ---
     peso = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Peso (kg)")
@@ -90,6 +91,15 @@ class Producto(models.Model):
             return self.precio_venta - self.costo_de_produccion
         return decimal.Decimal(0)
 
+    def save(self, *args, **kwargs):
+        # Primero guardar la instancia para obtener pk
+        super().save(*args, **kwargs)
+        # Calcular precio_venta automáticamente basado en costo de producción y porcentaje de ganancia
+        if self.porcentaje_ganancia > 0:
+            self.precio_venta = self.costo_de_produccion * (1 + self.porcentaje_ganancia / 100)
+            # Guardar de nuevo solo el campo precio_venta
+            super().save(update_fields=['precio_venta'])
+
 
 # --- NUEVO MODELO ---
 # Tabla intermedia para definir qué procesos y por cuánto tiempo se aplican a un producto
@@ -103,6 +113,13 @@ class PasoDeProduccion(models.Model):
 
     def __str__(self):
         return f"Proceso '{self.proceso.nombre}' para '{self.producto.nombre}' ({self.tiempo_en_minutos} min)"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Recalcular precio_venta del producto si tiene porcentaje de ganancia
+        if self.producto.porcentaje_ganancia > 0:
+            self.producto.precio_venta = self.producto.costo_de_produccion * (1 + self.producto.porcentaje_ganancia / 100)
+            self.producto.save(update_fields=['precio_venta'])
 
 
 # Modelo que representa la "receta" o "formulación"
@@ -124,6 +141,13 @@ class Formulacion(models.Model):
 
     def __str__(self):
         return f"{self.cantidad} {self.insumo.unidad.abreviatura} de {self.insumo.nombre} para {self.producto.nombre}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Recalcular precio_venta del producto si tiene porcentaje de ganancia
+        if self.producto.porcentaje_ganancia > 0:
+            self.producto.precio_venta = self.producto.costo_de_produccion * (1 + self.producto.porcentaje_ganancia / 100)
+            self.producto.save(update_fields=['precio_venta'])
 
 
 # Modelo para estándares por producto

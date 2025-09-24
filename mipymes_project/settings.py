@@ -25,10 +25,11 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = ['nimypine-production.up.railway.app', '127.0.0.1']
+ALLOWED_HOSTS = ['nimypine-production.up.railway.app', '127.0.0.1', 'nimypine.codeader.com']
 CSRF_TRUSTED_ORIGINS = [
     'https://nimypine-production.up.railway.app',
     'http://127.0.0.1:8000',
+    'https://nimypine.codeader.com'
 ]
 
 # --- Aplicaciones Instaladas ---

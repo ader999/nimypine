@@ -423,6 +423,7 @@ def eliminar_paso_produccion(request, producto_id, paso_id):
 def calculadora_lotes(request, producto_id):
     """
     Calculadora para estimar cantidades de insumos y costos para un lote de producción.
+    Permite producir el lote restando insumos del inventario.
     """
     producto = get_object_or_404(Producto, id=producto_id, mipyme=request.user.mipyme)
 
@@ -431,6 +432,8 @@ def calculadora_lotes(request, producto_id):
     costo_total_procesos = 0
     ingresos_estimados = 0
     ganancia_estimada = 0
+    error_stock = None
+    produccion_exitosa = False
 
     if request.method == 'POST':
         form = CalculadoraLotesForm(request.POST)
@@ -439,8 +442,10 @@ def calculadora_lotes(request, producto_id):
 
             # Calcular insumos para el lote
             resultados = []
+            insumos_a_restar = []
             for item in producto.formulacion.all():
                 cantidad_total = item.cantidad * cantidad_unidades
+                cantidad_con_desperdicio = cantidad_total * (1 + (item.porcentaje_desperdicio / 100))
                 costo_unitario = item.insumo.costo_unitario
                 costo_con_desperdicio = cantidad_total * costo_unitario * (1 + (item.porcentaje_desperdicio / 100))
                 costo_total_insumos += costo_con_desperdicio
@@ -451,6 +456,10 @@ def calculadora_lotes(request, producto_id):
                     'cantidad_total': cantidad_total,
                     'costo': costo_con_desperdicio,
                 })
+                insumos_a_restar.append({
+                    'insumo': item.insumo,
+                    'cantidad_a_restar': cantidad_con_desperdicio,
+                })
 
             # Calcular procesos para el lote
             for paso in producto.pasodeproduccion_set.all():
@@ -460,6 +469,29 @@ def calculadora_lotes(request, producto_id):
             # Calcular ingresos y ganancia
             ingresos_estimados = producto.precio_venta * cantidad_unidades
             ganancia_estimada = producto.margen_de_ganancia * cantidad_unidades
+
+            # Si se solicita producir el lote
+            if 'producir_lote' in request.POST:
+                # Validar stock de insumos
+                for insumo_data in insumos_a_restar:
+                    if insumo_data['insumo'].stock_actual < insumo_data['cantidad_a_restar']:
+                        error_stock = f"No hay suficiente stock de {insumo_data['insumo'].nombre}. Disponible: {insumo_data['insumo'].stock_actual} {insumo_data['insumo'].unidad.abreviatura}, requerido: {insumo_data['cantidad_a_restar']:.2f} {insumo_data['insumo'].unidad.abreviatura}."
+                        break
+                else:
+                    # Restar stock de insumos
+                    for insumo_data in insumos_a_restar:
+                        insumo_data['insumo'].stock_actual -= insumo_data['cantidad_a_restar']
+                        insumo_data['insumo'].save(update_fields=['stock_actual'])
+
+                    # Aumentar stock del producto
+                    producto.stock_actual += cantidad_unidades
+                    producto.save(update_fields=['stock_actual'])
+
+                    produccion_exitosa = True
+                    # Redirigir con mensaje de éxito
+                    from django.contrib import messages
+                    messages.success(request, f'Se produjo exitosamente {cantidad_unidades} unidades de {producto.nombre}.')
+                    return redirect('produccion:detalle_producto', producto_id=producto.id)
     else:
         form = CalculadoraLotesForm()
 
@@ -474,6 +506,8 @@ def calculadora_lotes(request, producto_id):
         'costo_total': costo_total,
         'ingresos_estimados': ingresos_estimados,
         'ganancia_estimada': ganancia_estimada,
+        'error_stock': error_stock,
+        'produccion_exitosa': produccion_exitosa,
         'nombrepine': request.user.mipyme.nombre
     }
     return render(request, 'produccion/calculadora_lotes.html', contexto)

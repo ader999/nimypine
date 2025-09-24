@@ -82,6 +82,22 @@
                 <p><strong>Costo Total del Lote:</strong> ${{ costo_total|floatformat:2 }}</p>
                 <p><strong>Ingresos Estimados:</strong> ${{ ingresos_estimados|floatformat:2 }}</p>
                 <p><strong>Ganancia Estimada:</strong> ${{ ganancia_estimada|floatformat:2 }}</p>
+
+                {% if error_stock %}
+                <div class="alert alert-danger mt-3">
+                    <strong>Error:</strong> {{ error_stock }}
+                </div>
+                {% endif %}
+
+                <div class="mt-3">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="cantidad_unidades" value="{{ form.cantidad_unidades.value }}">
+                        <button type="submit" name="producir_lote" class="btn btn-success">
+                            <i class="bi bi-gear-fill me-1"></i> Producir Lote
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

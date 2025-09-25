@@ -16,7 +16,14 @@
 <!-- ======== BARRA DE NAVEGACIÓN MEJORADA ======== -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
-        <a class="navbar-brand" href="{% url 'cuentas:inicio' %}">NIMIPYNES</a>
+        <a class="navbar-brand" href="{% url 'cuentas:inicio' %}">
+            <svg width="30" height="30" xmlns="http://www.w3.org/2000/svg">
+                <rect x="6" y="12" width="4.5" height="12" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+                <rect x="12" y="6" width="4.5" height="18" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+                <rect x="18" y="9" width="4.5" height="15" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+            </svg>
+            NIMIPYNES
+        </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>

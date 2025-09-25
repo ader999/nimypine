@@ -1,9 +1,9 @@
 # cuentas/urls.py
 
 from django.urls import path
-# 👇 Importamos las vistas de autenticación de Django
 from django.contrib.auth import views as auth_views
 from . import views
+from .forms import LoginForm
 
 app_name = 'cuentas'
 
@@ -13,7 +13,8 @@ urlpatterns = [
     path('', views.pagina_inicio, name='inicio'),
     # URLs de autenticación usando las vistas de Django
     path('login/', auth_views.LoginView.as_view(
-        template_name='cuentas/login.html'
+        template_name='cuentas/login.html',
+        form_class=LoginForm
     ), name='login'),
 
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),

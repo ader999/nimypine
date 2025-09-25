@@ -2,12 +2,19 @@
 
 import decimal
 import json
+import matplotlib.pyplot as plt
+import io
+import base64
+import numpy as np
+from datetime import datetime, timedelta
+from django.db.models import Sum
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Producto, Insumo, Formulacion, PasoDeProduccion, Proceso, Venta, VentaItem
 from .forms import ProductoForm, FormulacionForm, InsumoForm, FormulacionUpdateForm, ProcesoForm, PasoUpdateForm, PasoDeProduccionForm, CalculadoraLotesForm, VentaItemFormSet
 from cuentas.decorators import rol_requerido, mipyme_requerida
 from cuentas.forms import CambiarContrasenaForm, ActualizarPerfilForm, ConfigurarAvatarForm, EditarInformacionEmpresaForm, ConfigurarLogoForm, CambiarSectorEconomicoForm, ConfigurarParametrosProduccionForm
+from cuentas.models import Usuario
 from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
 
@@ -22,10 +29,69 @@ def panel_produccion(request):
     # Gracias al decorador, ahora podemos estar SEGUROS de que
     # request.user.mipyme existe y no es None.
 
+    mipyme = request.user.mipyme
+
+    # Calcular costos mensuales para umbrales
+    num_usuarios = Usuario.objects.filter(mipyme=mipyme).count()
+    costo_admin = decimal.Decimal(365)  # Salario admin
+    costo_empleados = decimal.Decimal(350) * (num_usuarios - 1) if num_usuarios > 1 else decimal.Decimal(0)
+    costos_mensuales = costo_admin + costo_empleados
+    umbral_perdidas = -float(costos_mensuales)  # Línea roja para pérdidas
+    umbral_ganancias = float(costos_mensuales)  # Línea verde para ganancias
+
+    # Obtener ventas agrupadas por mes, últimos 12 meses con datos
+    from django.db.models.functions import TruncMonth
+    ventas_por_mes = Venta.objects.filter(mipyme=mipyme).annotate(
+        mes=TruncMonth('fecha')
+    ).values('mes').annotate(
+        total_ventas=Sum('total')
+    ).order_by('-mes')[:12]
+
+    meses = []
+    rentabilidades = []
+
+    for venta_mes in reversed(list(ventas_por_mes)):
+        mes = venta_mes['mes']
+        ventas_mes = venta_mes['total_ventas'] or decimal.Decimal(0)
+        rentabilidad = float(ventas_mes - costos_mensuales)
+
+        meses.append(mes.strftime('%b %Y'))
+        rentabilidades.append(rentabilidad)
+
+    # Si no hay ventas, mostrar mensaje o gráfica vacía
+    if not meses:
+        meses = ['Sin datos']
+        rentabilidades = [0]
+
+    # Generar gráfica
+    rentabilidades_array = np.array(rentabilidades)
+    plt.figure(figsize=(10, 5))
+    plt.plot(meses, rentabilidades, marker='o', color='blue', linewidth=2, label='Rentabilidad')
+    plt.axhline(y=umbral_perdidas, color='red', linestyle='--', linewidth=2, label=f'Umbral Pérdidas ({umbral_perdidas:.0f})')
+    plt.axhline(y=umbral_ganancias, color='green', linestyle='--', linewidth=2, label=f'Umbral Ganancias ({umbral_ganancias:.0f})')
+    plt.fill_between(meses, umbral_perdidas, rentabilidades_array, where=(rentabilidades_array < umbral_perdidas), color='red', alpha=0.3)
+    plt.fill_between(meses, umbral_ganancias, rentabilidades_array, where=(rentabilidades_array > umbral_ganancias), color='green', alpha=0.3)
+    plt.title('Rentabilidad del Negocio - Últimos 12 Meses')
+    plt.xlabel('Mes')
+    plt.ylabel('Rentabilidad ($)')
+    plt.xticks(rotation=45)
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+
+    # Convertir a base64
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+    image_base64 = base64.b64encode(buf.read()).decode('utf-8')
+    buf.close()
+    plt.close()
+
     contexto = {
         'titulo': 'Panel de Producción',
         'usuario': request.user,
-        'nombrepine': request.user.mipyme.nombre  # Ahora esta línea es segura
+        'nombrepine': mipyme.nombre,
+        'grafica_rentabilidad': image_base64
     }
 
     return render(request, 'produccion/panel.html', contexto)

@@ -84,7 +84,8 @@
   margin: 20px;
   display: flex;
   flex-direction: column;
-  width: 950px;
+  max-width: 950px;
+  width: 100%;
 }
 
 .card-header {
@@ -229,6 +230,16 @@
   padding: 20px;
   color: #666;
   font-style: italic;
+}
+
+/* Media query para dispositivos móviles con ancho <= 900px */
+@media (max-width: 900px) {
+  .row > .col-md-3 {
+    order: 2;
+  }
+  .row > .col-md-9 {
+    order: 1;
+  }
 }
 </style>
 

@@ -59,6 +59,7 @@ def get_company_data(user):
         'correo': mipyme.correo,
         'tipo': mipyme.tipo.nombre if mipyme.tipo else None,
         'sector': mipyme.sector.nombre if mipyme.sector else None,
+        'moneda_predeterminada': mipyme.moneda_predeterminada,
         'productos': [
             {
                 'nombre': p.nombre,
@@ -200,7 +201,7 @@ def procesar_mensaje(mensaje, user, model='openai'):
         'produccion', 'insumo', 'venta', 'proceso', 'formulacion', 'producto', 'mipyme',
         'empresa', 'ventas', 'facturacion', 'estandarizar', 'sql', 'codigo', 'grafico',
         'agregar', 'registrar', 'crear', 'materia prima', 'materias primas', 'pasos produccion',
-        'produccion pasos', 'datos empresa'
+        'produccion pasos', 'datos empresa', 'datos', 'informacion', 'moneda', 'predeterminada'
     ]
     if not any(kw in mensaje_lower for kw in palabras_clave):
         return "Lo siento, solo puedo ayudarte con temas relacionados con la gestión de tu mipyme, como producción, ventas, insumos o procesos. ¿En qué puedo asistirte en esos aspectos?"
@@ -210,9 +211,13 @@ def procesar_mensaje(mensaje, user, model='openai'):
         prompt = f"Sugerencias para estandarizar productos basadas en estos datos: {json.dumps(data)}"
         return get_ai_response(prompt, model)
 
-    elif 'datos empresa' in mensaje_lower or 'empresa' in mensaje_lower:
+    elif 'datos empresa' in mensaje_lower or 'empresa' in mensaje_lower or 'datos' in mensaje_lower:
         data = get_company_data(user)
         return json.dumps(data, indent=2)
+
+    elif 'moneda' in mensaje_lower:
+        mipyme = user.mipyme
+        return f"La moneda predeterminada de tu mipyme es {mipyme.get_moneda_predeterminada_display()} ({mipyme.moneda_predeterminada})."
 
     elif 'productos' in mensaje_lower and 'ultima venta' in mensaje_lower:
         # Última venta y sus productos

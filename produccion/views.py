@@ -7,6 +7,9 @@ from django.contrib.auth.decorators import login_required
 from .models import Producto, Insumo, Formulacion, PasoDeProduccion, Proceso, Venta, VentaItem
 from .forms import ProductoForm, FormulacionForm, InsumoForm, FormulacionUpdateForm, ProcesoForm, PasoUpdateForm, PasoDeProduccionForm, CalculadoraLotesForm, VentaItemFormSet
 from cuentas.decorators import rol_requerido, mipyme_requerida
+from cuentas.forms import CambiarContrasenaForm, ActualizarPerfilForm, ConfigurarAvatarForm, EditarInformacionEmpresaForm, ConfigurarLogoForm, CambiarSectorEconomicoForm, ConfigurarParametrosProduccionForm
+from django.contrib.auth import update_session_auth_hash
+from django.contrib import messages
 
 
 @login_required
@@ -55,16 +58,23 @@ def crear_producto(request):
     """
     Gestiona la creación de un nuevo producto.
     """
+    mipyme = request.user.mipyme
+    usar_porcentaje_predeterminado = mipyme.porcentaje_ganancia_predeterminado > 0
+
     if request.method == 'POST':
         # Si el formulario fue enviado, procesa los datos
-        form = ProductoForm(request.POST)
+        form = ProductoForm(request.POST, usar_porcentaje_predeterminado=usar_porcentaje_predeterminado, porcentaje_predeterminado=mipyme.porcentaje_ganancia_predeterminado)
         if form.is_valid():
             # El formulario es válido, pero no lo guardes todavía
             nuevo_producto = form.save(commit=False)
 
             # Asigna la Mipyme del usuario actual al nuevo producto
             # Esto es crucial para la seguridad y la lógica de negocio
-            nuevo_producto.mipyme = request.user.mipyme
+            nuevo_producto.mipyme = mipyme
+
+            # Si se usa porcentaje predeterminado, asignarlo automáticamente
+            if usar_porcentaje_predeterminado:
+                nuevo_producto.porcentaje_ganancia = mipyme.porcentaje_ganancia_predeterminado
 
             # Ahora sí, guarda el objeto completo en la base de datos
             nuevo_producto.save()
@@ -73,11 +83,13 @@ def crear_producto(request):
             return redirect('produccion:lista_productos')
     else:
         # Si la petición es GET, muestra un formulario vacío
-        form = ProductoForm()
+        form = ProductoForm(usar_porcentaje_predeterminado=usar_porcentaje_predeterminado, porcentaje_predeterminado=mipyme.porcentaje_ganancia_predeterminado)
 
     contexto = {
         'form': form,
-        'nombrepine': request.user.mipyme.nombre
+        'usar_porcentaje_predeterminado': usar_porcentaje_predeterminado,
+        'porcentaje_predeterminado': mipyme.porcentaje_ganancia_predeterminado,
+        'nombrepine': mipyme.nombre
     }
     return render(request, 'produccion/crear_producto.html', contexto)
 
@@ -88,8 +100,14 @@ def detalle_producto(request, producto_id):
     producto = get_object_or_404(Producto, id=producto_id, mipyme=request.user.mipyme)
     mipyme_actual = request.user.mipyme
 
+    # Determinar si usar el margen de desperdicio predeterminado
+    usar_margen_desperdicio_predeterminado = mipyme_actual.margen_desperdicio_predeterminado > 0
+
     # Inicializamos ambos formularios para pasarlos al contexto
-    form_insumo = FormulacionForm(mipyme=mipyme_actual)
+    form_insumo = FormulacionForm(
+        mipyme=mipyme_actual,
+        usar_margen_desperdicio_predeterminado=usar_margen_desperdicio_predeterminado
+    )
     form_proceso = PasoDeProduccionForm(mipyme=mipyme_actual)
 
     if request.method == 'POST':
@@ -97,12 +115,19 @@ def detalle_producto(request, producto_id):
 
         # --- LÓGICA PARA EL FORMULARIO DE INSUMOS ---
         if 'submit_insumo' in request.POST:
-            form_insumo = FormulacionForm(request.POST, mipyme=mipyme_actual)
+            form_insumo = FormulacionForm(
+                request.POST,
+                mipyme=mipyme_actual,
+                usar_margen_desperdicio_predeterminado=usar_margen_desperdicio_predeterminado
+            )
             if form_insumo.is_valid():
                 insumo_seleccionado = form_insumo.cleaned_data['insumo']
                 if not Formulacion.objects.filter(producto=producto, insumo=insumo_seleccionado).exists():
                     nuevo_item = form_insumo.save(commit=False)
                     nuevo_item.producto = producto
+                    # Si se usa el margen de desperdicio predeterminado, asignarlo automáticamente
+                    if usar_margen_desperdicio_predeterminado:
+                        nuevo_item.porcentaje_desperdicio = mipyme_actual.margen_desperdicio_predeterminado
                     nuevo_item.save()
                 # Redirigimos para limpiar el formulario y evitar reenvíos
                 return redirect('produccion:detalle_producto', producto_id=producto.id)
@@ -129,6 +154,8 @@ def detalle_producto(request, producto_id):
         'pasos_produccion': pasos_produccion,
         'form_insumo': form_insumo,  # Pasamos el formulario de insumos
         'form_proceso': form_proceso,  # Pasamos el formulario de procesos
+        'usar_margen_desperdicio_predeterminado': usar_margen_desperdicio_predeterminado,
+        'margen_desperdicio_predeterminado': mipyme_actual.margen_desperdicio_predeterminado,
         'nombrepine': request.user.mipyme.nombre
     }
     return render(request, 'produccion/detalle_producto.html', contexto)
@@ -154,14 +181,14 @@ def crear_insumo(request):
     Gestiona la creación de un nuevo insumo.
     """
     if request.method == 'POST':
-        form = InsumoForm(request.POST)
+        form = InsumoForm(request.POST, mipyme=request.user.mipyme)
         if form.is_valid():
             nuevo_insumo = form.save(commit=False)
             nuevo_insumo.mipyme = request.user.mipyme # Asigna la Mipyme del usuario
             nuevo_insumo.save()
             return redirect('produccion:lista_insumos')
     else:
-        form = InsumoForm()
+        form = InsumoForm(mipyme=request.user.mipyme)
 
     contexto = {
         'form': form,
@@ -177,20 +204,29 @@ def editar_producto(request, producto_id):
     # Seguridad: Obtenemos el producto asegurándonos que pertenece a la Mipyme del usuario
     producto = get_object_or_404(Producto, id=producto_id, mipyme=request.user.mipyme)
 
+    mipyme = request.user.mipyme
+    usar_porcentaje_predeterminado = mipyme.porcentaje_ganancia_predeterminado > 0
+
     if request.method == 'POST':
         # Pasamos 'instance=producto' para indicarle al formulario que estamos actualizando
-        form = ProductoForm(request.POST, instance=producto)
+        form = ProductoForm(request.POST, instance=producto, usar_porcentaje_predeterminado=usar_porcentaje_predeterminado, porcentaje_predeterminado=mipyme.porcentaje_ganancia_predeterminado)
         if form.is_valid():
-            form.save()
+            producto_editado = form.save(commit=False)
+            # Si se usa porcentaje predeterminado, asignarlo automáticamente
+            if usar_porcentaje_predeterminado:
+                producto_editado.porcentaje_ganancia = mipyme.porcentaje_ganancia_predeterminado
+            producto_editado.save()
             return redirect('produccion:lista_productos') # Redirigimos a la lista de productos
     else:
         # Si es GET, mostramos el formulario pre-llenado con los datos del producto
-        form = ProductoForm(instance=producto)
+        form = ProductoForm(instance=producto, usar_porcentaje_predeterminado=usar_porcentaje_predeterminado, porcentaje_predeterminado=mipyme.porcentaje_ganancia_predeterminado)
 
     contexto = {
         'form': form,
         'producto': producto, # Lo pasamos para usarlo en el título de la plantilla
-        'nombrepine': request.user.mipyme.nombre
+        'usar_porcentaje_predeterminado': usar_porcentaje_predeterminado,
+        'porcentaje_predeterminado': mipyme.porcentaje_ganancia_predeterminado,
+        'nombrepine': mipyme.nombre
     }
     # Reutilizaremos la plantilla de creación de productos
     return render(request, 'produccion/crear_producto.html', contexto)
@@ -280,13 +316,13 @@ def editar_insumo(request, insumo_id):
 
     if request.method == 'POST':
         # Pasamos 'instance=insumo' para indicarle al formulario que estamos actualizando
-        form = InsumoForm(request.POST, instance=insumo)
+        form = InsumoForm(request.POST, instance=insumo, mipyme=request.user.mipyme)
         if form.is_valid():
             form.save()
             return redirect('produccion:lista_insumos') # Redirigimos a la lista
     else:
         # Si es GET, mostramos el formulario pre-llenado con los datos del insumo
-        form = InsumoForm(instance=insumo)
+        form = InsumoForm(instance=insumo, mipyme=request.user.mipyme)
 
     contexto = {
         'form': form,
@@ -660,4 +696,204 @@ def historial_ventas(request):
     }
     return render(request, 'produccion/historial_ventas.html', contexto)
 
+# --- CONFIGURACIÓN ---
+
+@login_required
+@mipyme_requerida
+def configuracion(request):
+    """
+    Vista para la configuración de la aplicación de producción.
+    """
+    contexto = {
+        'titulo': 'Configuración',
+        'nombrepine': request.user.mipyme.nombre
+    }
+    return render(request, 'produccion/configuracion.html', contexto)
+
+
+@login_required
+@mipyme_requerida
+def cambiar_contrasena(request):
+    """
+    Vista para cambiar la contraseña del usuario.
+    """
+    if request.method == 'POST':
+        form = CambiarContrasenaForm(request.POST)
+        if form.is_valid():
+            # Verificar contraseña actual
+            if not request.user.check_password(form.cleaned_data['password_actual']):
+                messages.error(request, 'La contraseña actual es incorrecta.')
+            else:
+                # Cambiar contraseña
+                request.user.set_password(form.cleaned_data['password_nueva'])
+                request.user.save()
+                # Mantener la sesión activa
+                update_session_auth_hash(request, request.user)
+                messages.success(request, 'Contraseña cambiada exitosamente.')
+                return redirect('produccion:configuracion')
+    else:
+        form = CambiarContrasenaForm()
+
+    contexto = {
+        'form': form,
+        'titulo': 'Cambiar Contraseña',
+        'nombrepine': request.user.mipyme.nombre
+    }
+    return render(request, 'produccion/configuraciones/cambiar_contrasena.html', contexto)
+
+
+@login_required
+@mipyme_requerida
+def actualizar_perfil(request):
+    """
+    Vista para actualizar la información de contacto del usuario.
+    """
+    if request.method == 'POST':
+        form = ActualizarPerfilForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Perfil actualizado exitosamente.')
+            return redirect('produccion:configuracion')
+    else:
+        form = ActualizarPerfilForm(instance=request.user)
+
+    contexto = {
+        'form': form,
+        'titulo': 'Actualizar Perfil',
+        'nombrepine': request.user.mipyme.nombre
+    }
+    return render(request, 'produccion/configuraciones/actualizar_perfil.html', contexto)
+
+
+@login_required
+@mipyme_requerida
+def configurar_avatar(request):
+    """
+    Vista para configurar el avatar del usuario.
+    """
+    if request.method == 'POST':
+        form = ConfigurarAvatarForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Avatar actualizado exitosamente.')
+            return redirect('produccion:configuracion')
+    else:
+        form = ConfigurarAvatarForm(instance=request.user)
+
+    contexto = {
+        'form': form,
+        'titulo': 'Configurar Avatar',
+        'nombrepine': request.user.mipyme.nombre
+    }
+    return render(request, 'produccion/configuraciones/configurar_avatar.html', contexto)
+
+
+@login_required
+@mipyme_requerida
+@rol_requerido('ADMIN')
+def editar_informacion_empresa(request):
+    """
+    Vista para editar la información básica de la empresa (MiPyme).
+    Solo accesible para administradores.
+    """
+    mipyme = request.user.mipyme
+
+    if request.method == 'POST':
+        form = EditarInformacionEmpresaForm(request.POST, instance=mipyme)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Información de la empresa actualizada exitosamente.')
+            return redirect('produccion:configuracion')
+    else:
+        form = EditarInformacionEmpresaForm(instance=mipyme)
+
+    contexto = {
+        'form': form,
+        'titulo': 'Editar Información de la Empresa',
+        'nombrepine': request.user.mipyme.nombre
+    }
+    return render(request, 'produccion/configuraciones/editar_informacion_empresa.html', contexto)
+
+
+@login_required
+@mipyme_requerida
+@rol_requerido('ADMIN')
+def configurar_logo(request):
+    """
+    Vista para configurar el logo de la empresa.
+    Solo accesible para administradores.
+    """
+    mipyme = request.user.mipyme
+
+    if request.method == 'POST':
+        form = ConfigurarLogoForm(request.POST, request.FILES, instance=mipyme)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Logo de la empresa actualizado exitosamente.')
+            return redirect('produccion:configuracion')
+    else:
+        form = ConfigurarLogoForm(instance=mipyme)
+
+    contexto = {
+        'form': form,
+        'titulo': 'Configurar Logo de la Empresa',
+        'nombrepine': request.user.mipyme.nombre
+    }
+    return render(request, 'produccion/configuraciones/configurar_logo.html', contexto)
+
+
+@login_required
+@mipyme_requerida
+@rol_requerido('ADMIN')
+def cambiar_sector_economico(request):
+    """
+    Vista para cambiar el sector económico de la empresa.
+    Solo accesible para administradores.
+    """
+    mipyme = request.user.mipyme
+
+    if request.method == 'POST':
+        form = CambiarSectorEconomicoForm(request.POST, instance=mipyme)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Sector económico actualizado exitosamente.')
+            return redirect('produccion:configuracion')
+    else:
+        form = CambiarSectorEconomicoForm(instance=mipyme)
+
+    contexto = {
+        'form': form,
+        'titulo': 'Cambiar Sector Económico',
+        'nombrepine': request.user.mipyme.nombre
+    }
+    return render(request, 'produccion/configuraciones/cambiar_sector_economico.html', contexto)
+
+
+@login_required
+@mipyme_requerida
+@rol_requerido('ADMIN')
+def configurar_parametros_produccion(request):
+    """
+    Vista para configurar los parámetros de producción de la empresa.
+    Solo accesible para administradores.
+    """
+    mipyme = request.user.mipyme
+
+    if request.method == 'POST':
+        form = ConfigurarParametrosProduccionForm(request.POST, instance=mipyme)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Parámetros de producción actualizados exitosamente.')
+            return redirect('produccion:configuracion')
+    else:
+        form = ConfigurarParametrosProduccionForm(instance=mipyme)
+
+    contexto = {
+        'form': form,
+        'titulo': 'Configurar Parámetros de Producción',
+        'nombrepine': request.user.mipyme.nombre
+    }
+    return render(request, 'produccion/configuraciones/configurar_parametros_produccion.html', contexto)
+
+# --- FIN DE CONFIGURACIÓN ---
 # --- FIN DE VENTAS ---

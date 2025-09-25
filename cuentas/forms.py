@@ -3,6 +3,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import Usuario, Mipyme, TipoEmpresa, SectorEconomico
+from produccion.models import UnidadMedida
 from .funciones import generar_username_unico
 
 
@@ -119,3 +120,154 @@ class EditarRolUsuarioForm(forms.ModelForm):
         widgets = {
             'rol': forms.Select(attrs={'class': 'form-select'}),
         }
+
+
+class CambiarContrasenaForm(forms.Form):
+    password_actual = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        label="Contraseña Actual",
+        required=True
+    )
+    password_nueva = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        label="Nueva Contraseña",
+        required=True
+    )
+    password_confirmacion = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        label="Confirmar Nueva Contraseña",
+        required=True
+    )
+
+    def clean_password_confirmacion(self):
+        password_nueva = self.cleaned_data.get("password_nueva")
+        password_confirmacion = self.cleaned_data.get("password_confirmacion")
+        if password_nueva and password_confirmacion and password_nueva != password_confirmacion:
+            raise forms.ValidationError("Las contraseñas no coinciden.")
+        return password_confirmacion
+
+
+class ActualizarPerfilForm(forms.ModelForm):
+    class Meta:
+        model = Usuario
+        fields = ['first_name', 'last_name', 'email']
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'first_name': 'Nombre(s)',
+            'last_name': 'Apellido(s)',
+            'email': 'Correo Electrónico',
+        }
+
+
+class ConfigurarAvatarForm(forms.ModelForm):
+    class Meta:
+        model = Usuario
+        fields = ['avatar']
+        widgets = {
+            'avatar': forms.FileInput(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'avatar': 'Seleccionar Avatar',
+        }
+
+
+class EditarInformacionEmpresaForm(forms.ModelForm):
+    class Meta:
+        model = Mipyme
+        fields = ['nombre', 'numero_telefono', 'correo', 'identificador_fiscal']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'numero_telefono': forms.TextInput(attrs={'class': 'form-control'}),
+            'correo': forms.EmailInput(attrs={'class': 'form-control'}),
+            'identificador_fiscal': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'nombre': 'Nombre de la Empresa',
+            'numero_telefono': 'Número de Teléfono',
+            'correo': 'Correo Electrónico',
+            'identificador_fiscal': 'Identificador Fiscal (RFC, RUT, etc.)',
+        }
+
+
+class ConfigurarLogoForm(forms.ModelForm):
+    class Meta:
+        model = Mipyme
+        fields = ['logo']
+        widgets = {
+            'logo': forms.FileInput(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'logo': 'Seleccionar Logo',
+        }
+
+
+class CambiarSectorEconomicoForm(forms.ModelForm):
+    class Meta:
+        model = Mipyme
+        fields = ['sector']
+        widgets = {
+            'sector': forms.Select(attrs={'class': 'form-select'}),
+        }
+        labels = {
+            'sector': 'Sector Económico',
+        }
+
+
+class ConfigurarParametrosProduccionForm(forms.ModelForm):
+    unidad_medida_predeterminada = forms.ModelMultipleChoiceField(
+        queryset=UnidadMedida.objects.all(),
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        required=True,
+        label="Unidades de medida predeterminadas",
+        help_text="Selecciona las unidades de medida que utilizará la empresa"
+    )
+
+    class Meta:
+        model = Mipyme
+        fields = [
+            'unidad_medida_predeterminada',
+            'porcentaje_ganancia_predeterminado',
+            'margen_desperdicio_predeterminado',
+            'moneda_predeterminada'
+        ]
+        widgets = {
+            'porcentaje_ganancia_predeterminado': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'max': '100'
+            }),
+            'margen_desperdicio_predeterminado': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'max': '50'
+            }),
+            'moneda_predeterminada': forms.Select(attrs={'class': 'form-select'}),
+        }
+        labels = {
+            'porcentaje_ganancia_predeterminado': 'Porcentaje de ganancia por defecto (%)',
+            'margen_desperdicio_predeterminado': 'Margen de desperdicio por defecto (%)',
+            'moneda_predeterminada': 'Moneda predeterminada',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Si hay datos iniciales, marcar las opciones seleccionadas
+        if self.instance and self.instance.pk and self.instance.unidad_medida_predeterminada:
+            # Convertir IDs almacenados en JSON a objetos UnidadMedida
+            ids_unidades = self.instance.unidad_medida_predeterminada
+            if ids_unidades:
+                unidades_seleccionadas = UnidadMedida.objects.filter(id__in=ids_unidades)
+                self.fields['unidad_medida_predeterminada'].initial = unidades_seleccionadas
+
+    def clean_unidad_medida_predeterminada(self):
+        unidades = self.cleaned_data.get('unidad_medida_predeterminada')
+        if not unidades:
+            raise forms.ValidationError("Debes seleccionar al menos una unidad de medida.")
+        # Convertir objetos a IDs para almacenar en JSON
+        return [unidad.id for unidad in unidades]

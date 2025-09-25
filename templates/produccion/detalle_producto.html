@@ -165,10 +165,17 @@
                         {{ form_insumo.cantidad }}
                     </div>
                     <!-- CAMPO NUEVO: Porcentaje de Desperdicio -->
+                    {% if usar_margen_desperdicio_predeterminado %}
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <strong>Margen de desperdicio automático:</strong> Se aplicará el margen configurado del {{ margen_desperdicio_predeterminado }}% a este insumo.
+                    </div>
+                    {% else %}
                     <div class="mb-3">
                         <label for="{{ form_insumo.porcentaje_desperdicio.id_for_label }}" class="form-label">% Desperdicio</label>
                         {{ form_insumo.porcentaje_desperdicio }}
                     </div>
+                    {% endif %}
                     <button type="submit" name="submit_insumo" class="btn btn-success w-100">
                         <i class="bi bi-check-circle-fill me-1"></i> Guardar en Receta
                     </button>

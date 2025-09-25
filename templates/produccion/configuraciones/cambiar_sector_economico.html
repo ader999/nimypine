@@ -1,0 +1,87 @@
+<!-- produccion/templates/produccion/cambiar_sector_economico.html -->
+{% extends 'produccion/base_produccion.html' %}
+
+{% block title %}Cambiar Sector Económico{% endblock %}
+
+{% block page_title %}Cambiar Sector Económico{% endblock %}
+
+{% block content %}
+<!-- Mensajes de Django -->
+{% if messages %}
+<div class="container mt-3">
+    {% for message in messages %}
+    <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'warning' %}alert-warning{% elif message.tags == 'info' %}alert-info{% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>Cambiar Sector Económico</h5>
+            </div>
+            <div class="card-body">
+                <!-- Sector Actual -->
+                <div class="mb-4">
+                    <h6>Sector Económico Actual</h6>
+                    <div class="alert alert-info">
+                        <strong>{{ request.user.mipyme.sector.nombre|default:"No definido" }}</strong>
+                        {% if request.user.mipyme.sector.descripcion %}
+                            <br><small class="text-muted">{{ request.user.mipyme.sector.descripcion }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.sector.id_for_label }}" class="form-label">Nuevo Sector Económico</label>
+                        {{ form.sector }}
+                        {% if form.sector.errors %}
+                            <div class="text-danger small">
+                                {{ form.sector.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Selecciona el sector económico que mejor describe tu actividad empresarial.
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'produccion:configuracion' %}" class="btn btn-outline-secondary me-md-2">Cancelar</a>
+                        <button type="submit" class="btn btn-primary" id="submit-btn">
+                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            Cambiar Sector
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const submitBtn = document.getElementById('submit-btn');
+    const spinner = submitBtn.querySelector('.spinner-border');
+    const textNode = submitBtn.lastChild;
+
+    form.addEventListener('submit', function(e) {
+        // Deshabilitar el botón
+        submitBtn.disabled = true;
+
+        // Mostrar spinner
+        spinner.classList.remove('d-none');
+
+        // Cambiar solo el texto
+        textNode.textContent = ' Procesando...';
+    });
+});
+</script>
+{% endblock %}

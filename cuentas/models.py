@@ -27,6 +27,26 @@ class TipoEmpresa(models.Model):
         verbose_name_plural = "Tipos de Empresa"
 
 class Mipyme(models.Model):
+    # --- CONFIGURACIÓN DE PRODUCCIÓN ---
+    UNIDADES_MEDIDA_CHOICES = [
+        ('kg', 'Kilogramos'),
+        ('g', 'Gramos'),
+        ('l', 'Litros'),
+        ('ml', 'Mililitros'),
+        ('un', 'Unidades'),
+        ('m', 'Metros'),
+        ('cm', 'Centímetros'),
+        ('m2', 'Metros cuadrados'),
+        ('m3', 'Metros cúbicos'),
+    ]
+
+    MONEDA_CHOICES = [
+        ('USD', 'Dólar estadounidense'),
+        ('NIO', 'Córdoba nicaragüense'),
+        ('HNL', 'Lempira hondureño'),
+        ('CRC', 'Colón costarricense'),
+    ]
+
     nombre = models.CharField(max_length=255, unique=True)
     numero_telefono = models.CharField(max_length=20, null=True, blank=True)
     correo = models.EmailField(max_length=50, null=True, blank=True)
@@ -38,6 +58,32 @@ class Mipyme(models.Model):
         null=True,
         blank=True,
         verbose_name="Identificador Fiscal (RFC, RUT, etc.)"
+    )
+    logo = models.ImageField(upload_to='logos/', null=True, blank=True, verbose_name="Logo de la Empresa")
+
+    # Configuración de producción
+    unidad_medida_predeterminada = models.JSONField(
+        default=list,
+        verbose_name="Unidades de medida predeterminadas",
+        help_text="Selecciona las unidades de medida que utilizará la empresa"
+    )
+    porcentaje_ganancia_predeterminado = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=20.00,
+        verbose_name="Porcentaje de ganancia por defecto (%)"
+    )
+    margen_desperdicio_predeterminado = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=5.00,
+        verbose_name="Margen de desperdicio por defecto (%)"
+    )
+    moneda_predeterminada = models.CharField(
+        max_length=3,
+        choices=MONEDA_CHOICES,
+        default='USD',
+        verbose_name="Moneda predeterminada"
     )
 
     def __str__(self):
@@ -64,6 +110,9 @@ class Usuario(AbstractUser):
         choices=Roles.choices,
         default=Roles.LECTURA  # Por defecto, un nuevo usuario solo puede ver
     )
+
+    # Campo para avatar
+    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True, verbose_name="Avatar")
 
     def __str__(self):
         return self.username

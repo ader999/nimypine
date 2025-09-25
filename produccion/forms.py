@@ -3,7 +3,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import modelformset_factory
-from .models import Producto, Formulacion, Insumo, Proceso, PasoDeProduccion, EstándaresProducto, Venta, VentaItem
+from .models import Producto, Formulacion, Insumo, Proceso, PasoDeProduccion, EstándaresProducto, Venta, VentaItem, UnidadMedida
 
 class ProductoForm(forms.ModelForm):
     class Meta:
@@ -35,6 +35,18 @@ class ProductoForm(forms.ModelForm):
             'tamano_alto': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 10'}),
             'presentacion': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Bolsa de 500g'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        # Sacamos el argumento 'usar_porcentaje_predeterminado' que le pasaremos desde la vista
+        usar_porcentaje_predeterminado = kwargs.pop('usar_porcentaje_predeterminado', False)
+        porcentaje_predeterminado = kwargs.pop('porcentaje_predeterminado', 0)
+        super().__init__(*args, **kwargs)
+
+        # Si se debe usar el porcentaje predeterminado, quitar el campo del formulario
+        if usar_porcentaje_predeterminado:
+            # Remover el campo porcentaje_ganancia del formulario
+            if 'porcentaje_ganancia' in self.fields:
+                del self.fields['porcentaje_ganancia']
 
     def clean(self):
         cleaned_data = super().clean()
@@ -95,8 +107,9 @@ class FormulacionForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        # Sacamos el argumento 'mipyme' que le pasaremos desde la vista
+        # Sacamos los argumentos que le pasaremos desde la vista
         mipyme = kwargs.pop('mipyme', None)
+        usar_margen_desperdicio_predeterminado = kwargs.pop('usar_margen_desperdicio_predeterminado', False)
         super().__init__(*args, **kwargs)
 
         # Si hemos recibido la mipyme (que siempre debería pasar)...
@@ -104,6 +117,11 @@ class FormulacionForm(forms.ModelForm):
             # ...filtramos el queryset del campo 'insumo' para mostrar solo
             # los insumos que pertenecen a esa mipyme.
             self.fields['insumo'].queryset = Insumo.objects.filter(mipyme=mipyme).order_by('nombre')
+
+        # Si se debe usar el margen de desperdicio predeterminado, quitar el campo del formulario
+        if usar_margen_desperdicio_predeterminado:
+            if 'porcentaje_desperdicio' in self.fields:
+                del self.fields['porcentaje_desperdicio']
 
 
 class FormulacionUpdateForm(forms.ModelForm):
@@ -136,6 +154,26 @@ class InsumoForm(forms.ModelForm):
             'costo_unitario': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 1.50'}),
             'stock_actual': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 25.5'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        # Sacamos el argumento 'mipyme' que le pasaremos desde la vista
+        mipyme = kwargs.pop('mipyme', None)
+        super().__init__(*args, **kwargs)
+
+        # Si hemos recibido la mipyme, filtramos las unidades de medida
+        if mipyme:
+            # Obtener las unidades de medida configuradas para esta empresa
+            unidades_configuradas = mipyme.unidad_medida_predeterminada or []
+
+            if unidades_configuradas:
+                # Si hay unidades configuradas, mostrar solo esas
+                self.fields['unidad'].queryset = UnidadMedida.objects.filter(id__in=unidades_configuradas).order_by('nombre')
+            else:
+                # Si no hay unidades configuradas, mostrar todas
+                self.fields['unidad'].queryset = UnidadMedida.objects.all().order_by('nombre')
+        else:
+            # Si no se pasa mipyme, mostrar todas las unidades (por compatibilidad)
+            self.fields['unidad'].queryset = UnidadMedida.objects.all().order_by('nombre')
 
 
 class ProcesoForm(forms.ModelForm):

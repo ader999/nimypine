@@ -26,6 +26,13 @@
             </div>
             {% endfor %}
 
+            {% if usar_porcentaje_predeterminado %}
+            <div class="alert alert-info" role="alert">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <strong>Porcentaje de ganancia automático:</strong> Se aplicará el porcentaje configurado del {{ porcentaje_predeterminado }}% a este producto.
+            </div>
+            {% endif %}
+
             <div class="mt-4">
                 <a href="{% url 'produccion:lista_productos' %}" class="btn btn-secondary">
                     <i class="bi bi-x-circle me-1"></i> Cancelar

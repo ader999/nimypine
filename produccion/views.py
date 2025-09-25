@@ -8,6 +8,8 @@ import base64
 import numpy as np
 from datetime import datetime, timedelta
 from django.db.models import Sum
+from openpyxl import Workbook
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Producto, Insumo, Formulacion, PasoDeProduccion, Proceso, Venta, VentaItem
@@ -961,6 +963,113 @@ def configurar_parametros_produccion(request):
         'nombrepine': request.user.mipyme.nombre
     }
     return render(request, 'produccion/configuraciones/configurar_parametros_produccion.html', contexto)
+
+@login_required
+@mipyme_requerida
+def exportar_productos_excel(request):
+    """
+    Exporta todos los productos de la Mipyme del usuario a un archivo Excel,
+    incluyendo datos relevantes y relacionados.
+    """
+    mipyme = request.user.mipyme
+    productos = Producto.objects.filter(mipyme=mipyme).prefetch_related('formulacion__insumo', 'pasodeproduccion_set__proceso', 'estándares').order_by('nombre')
+
+    # Crear workbook
+    wb = Workbook()
+    ws_productos = wb.active
+    ws_productos.title = "Productos"
+
+    # Hoja de Productos
+    headers_productos = [
+        'Nombre', 'Descripción', 'Precio Venta', 'Porcentaje Ganancia', 'Stock Actual',
+        'Costo Producción', 'Costo Insumos', 'Costo Procesos', 'Margen Ganancia',
+        'Peso (kg)', 'Largo (cm)', 'Ancho (cm)', 'Alto (cm)', 'Presentación'
+    ]
+    ws_productos.append(headers_productos)
+
+    for producto in productos:
+        row = [
+            producto.nombre,
+            producto.descripcion or '',
+            float(producto.precio_venta) if producto.precio_venta else 0,
+            float(producto.porcentaje_ganancia) if producto.porcentaje_ganancia else 0,
+            producto.stock_actual,
+            float(producto.costo_de_produccion),
+            float(producto.costo_insumos),
+            float(producto.costo_procesos),
+            float(producto.margen_de_ganancia),
+            float(producto.peso) if producto.peso else '',
+            float(producto.tamano_largo) if producto.tamano_largo else '',
+            float(producto.tamano_ancho) if producto.tamano_ancho else '',
+            float(producto.tamano_alto) if producto.tamano_alto else '',
+            producto.presentacion or ''
+        ]
+        ws_productos.append(row)
+
+    # Hoja de Formulación (Insumos)
+    ws_formulacion = wb.create_sheet("Formulación")
+    headers_formulacion = ['Producto', 'Insumo', 'Cantidad', 'Unidad', 'Costo Unitario', 'Porcentaje Desperdicio']
+    ws_formulacion.append(headers_formulacion)
+
+    for producto in productos:
+        for item in producto.formulacion.all():
+            row = [
+                producto.nombre,
+                item.insumo.nombre,
+                float(item.cantidad),
+                item.insumo.unidad.abreviatura,
+                float(item.insumo.costo_unitario),
+                float(item.porcentaje_desperdicio)
+            ]
+            ws_formulacion.append(row)
+
+    # Hoja de Procesos
+    ws_procesos = wb.create_sheet("Procesos")
+    headers_procesos = ['Producto', 'Proceso', 'Tiempo (minutos)', 'Costo por Hora']
+    ws_procesos.append(headers_procesos)
+
+    for producto in productos:
+        for paso in producto.pasodeproduccion_set.all():
+            row = [
+                producto.nombre,
+                paso.proceso.nombre,
+                paso.tiempo_en_minutos,
+                float(paso.proceso.costo_por_hora)
+            ]
+            ws_procesos.append(row)
+
+    # Hoja de Estándares (si existen)
+    ws_estandares = wb.create_sheet("Estándares")
+    headers_estandares = [
+        'Producto', 'Peso Mín', 'Peso Máx', 'Largo Mín', 'Largo Máx',
+        'Ancho Mín', 'Ancho Máx', 'Alto Mín', 'Alto Máx', 'Presentación Estándar'
+    ]
+    ws_estandares.append(headers_estandares)
+
+    for producto in productos:
+        if hasattr(producto, 'estándares') and producto.estándares:
+            est = producto.estándares
+            row = [
+                producto.nombre,
+                float(est.peso_min) if est.peso_min else '',
+                float(est.peso_max) if est.peso_max else '',
+                float(est.tamano_largo_min) if est.tamano_largo_min else '',
+                float(est.tamano_largo_max) if est.tamano_largo_max else '',
+                float(est.tamano_ancho_min) if est.tamano_ancho_min else '',
+                float(est.tamano_ancho_max) if est.tamano_ancho_max else '',
+                float(est.tamano_alto_min) if est.tamano_alto_min else '',
+                float(est.tamano_alto_max) if est.tamano_alto_max else '',
+                est.presentacion_estandar or ''
+            ]
+            ws_estandares.append(row)
+
+    # Preparar respuesta HTTP
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="productos_{mipyme.nombre.replace(" ", "_")}.xlsx"'
+
+    # Guardar workbook en la respuesta
+    wb.save(response)
+    return response
 
 # --- FIN DE CONFIGURACIÓN ---
 # --- FIN DE VENTAS ---

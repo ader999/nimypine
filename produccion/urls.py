@@ -12,6 +12,7 @@ urlpatterns = [
     # El 'name' nos permite referirnos a esta URL fácilmente en las plantillas y vistas.
     path('', views.panel_produccion, name='panel'),
     path('productos/', views.lista_productos, name='lista_productos'),
+    path('productos/exportar-excel/', views.exportar_productos_excel, name='exportar_productos_excel'),
     path('productos/nuevo/', views.crear_producto, name='crear_producto'),
     path('productos/<int:producto_id>/', views.detalle_producto, name='detalle_producto'),
     path('productos/<int:producto_id>/calculadora/', views.calculadora_lotes, name='calculadora_lotes'),

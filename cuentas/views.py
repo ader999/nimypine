@@ -170,6 +170,13 @@ def manejador_error_404(request, exception):
     return render(request, 'cuentas/404.html', status=404)
 
 
+@login_required
+def no_mipyme_asociada(request):
+    """
+    Vista para usuarios que no tienen una Mipyme asociada.
+    """
+    return render(request, 'cuentas/no_mipyme_asociada.html')
+
 def manejador_error_500(request):
     """
     Vista para manejar los errores 500 (Error interno del servidor).

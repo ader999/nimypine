@@ -49,6 +49,7 @@ def lista_productos(request):
 
 
 @login_required
+@mipyme_requerida
 @rol_requerido('ADMIN', 'EDITOR')
 def crear_producto(request):
     """
@@ -82,6 +83,7 @@ def crear_producto(request):
 
 
 @login_required
+@mipyme_requerida
 def detalle_producto(request, producto_id):
     producto = get_object_or_404(Producto, id=producto_id, mipyme=request.user.mipyme)
     mipyme_actual = request.user.mipyme
@@ -132,6 +134,7 @@ def detalle_producto(request, producto_id):
     return render(request, 'produccion/detalle_producto.html', contexto)
 
 @login_required
+@mipyme_requerida
 def lista_insumos(request):
     """
     Muestra una lista de todos los insumos de la Mipyme del usuario.
@@ -145,6 +148,7 @@ def lista_insumos(request):
 
 
 @login_required
+@mipyme_requerida
 def crear_insumo(request):
     """
     Gestiona la creación de un nuevo insumo.
@@ -314,6 +318,7 @@ def eliminar_insumo(request, insumo_id):
 # --- INICIO DE NUEVAS VISTAS PARA PROCESOS ---
 
 @login_required
+@mipyme_requerida
 def lista_procesos(request):
     """
     Muestra una lista de todos los procesos de la Mipyme del usuario.
@@ -326,6 +331,7 @@ def lista_procesos(request):
     return render(request, 'produccion/lista_procesos.html', contexto)
 
 @login_required
+@mipyme_requerida
 @rol_requerido('ADMIN', 'EDITOR')
 def crear_proceso(request):
     """
@@ -420,6 +426,7 @@ def eliminar_paso_produccion(request, producto_id, paso_id):
 
 
 @login_required
+@mipyme_requerida
 def calculadora_lotes(request, producto_id):
     """
     Calculadora para estimar cantidades de insumos y costos para un lote de producción.

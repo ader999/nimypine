@@ -13,9 +13,10 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 from cuentas.models import Mipyme
 from produccion.models import Producto, Insumo, Venta, VentaItem
-from .models import Conversacion, Mensaje
+from .models import Conversacion, Mensaje, GuiaUsuario
 import openai
 import google.generativeai as genai
+import markdown
 
 # Configurar APIs
 openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -110,19 +111,27 @@ def generate_graph(code):
         return f"Error generando gráfico: {str(e)}"
 
 @login_required
-def asistente_view(request):
+def asistente_view(request, conversacion_id=None):
     if not hasattr(request.user, 'mipyme') or not request.user.mipyme:
+        if request.user.is_superuser:
+            return redirect('admin:index')
         return redirect('cuentas:no_mipyme_asociada')
 
-    conversacion, created = Conversacion.objects.get_or_create(
-        usuario=request.user,
-        defaults={'titulo': 'Nueva conversación'}
-    )
+    conversacion = None
+    if conversacion_id:
+        conversacion = get_object_or_404(Conversacion, id=conversacion_id, usuario=request.user)
 
     if request.method == 'POST':
         mensaje_usuario = request.POST.get('mensaje')
         modelo_seleccionado = request.POST.get('modelo', 'openai')
         if mensaje_usuario:
+            if not conversacion:
+                # Crear una nueva conversación solo cuando se envía el primer mensaje
+                conversacion = Conversacion.objects.create(
+                    usuario=request.user,
+                    titulo=mensaje_usuario[:20] + '...' if len(mensaje_usuario) > 50 else mensaje_usuario
+                )
+
             # Guardar mensaje del usuario
             Mensaje.objects.create(conversacion=conversacion, contenido=mensaje_usuario, es_usuario=True)
 
@@ -134,9 +143,26 @@ def asistente_view(request):
 
             return JsonResponse({'respuesta': respuesta})
 
-    mensajes = conversacion.mensajes.all().order_by('fecha')
+    mensajes = conversacion.mensajes.all().order_by('fecha') if conversacion else []
+    # Procesar mensajes para convertir Markdown a HTML en respuestas del asistente
+    mensajes_procesados = []
+    for m in mensajes:
+        if not m.es_usuario:
+            m.contenido = markdown.markdown(m.contenido, extensions=['extra'])
+        mensajes_procesados.append(m)
+    # Solo mostrar conversaciones que tengan al menos un mensaje
+    conversaciones = Conversacion.objects.filter(
+        usuario=request.user,
+        mensajes__isnull=False
+    ).distinct().order_by('-fecha_inicio')
     avatar_url = default_storage.url('nimypine/material/sinfotouser.png')
-    return render(request, 'asistente/asistente.html', {'mensajes': mensajes, 'avatar_url': avatar_url,         'nombrepine': request.user.mipyme.nombre})
+    return render(request, 'asistente/asistente.html', {
+        'mensajes_procesados': mensajes_procesados,
+        'conversaciones': conversaciones,
+        'conversacion_actual': conversacion,
+        'avatar_url': avatar_url,
+        'nombrepine': request.user.mipyme.nombre
+    })
 
 def procesar_mensaje(mensaje, user, model='openai'):
     mensaje_lower = mensaje.lower()
@@ -186,8 +212,17 @@ def procesar_mensaje(mensaje, user, model='openai'):
         code = mensaje.split('grafico')[1].strip()
         return generate_graph(code)
 
+    elif any(kw in mensaje_lower for kw in ['agregar', 'agrego', 'añadir', 'registrar', 'crear']) and any(kw in mensaje_lower for kw in ['insumo', 'insumos', 'materia prima', 'materias primas']):
+        # Buscar guía para agregar insumo
+        guia = GuiaUsuario.objects.filter(activo=True, palabras_clave__icontains='agregar insumo').first()
+        if guia:
+            return f"{guia.descripcion}\n\nPasos:\n{guia.pasos}"
+        else:
+            return "Lo siento, no tengo una guía específica para agregar insumos en este momento."
+
     else:
         # Respuesta general con AI
         data = get_company_data(user)
         prompt = f"Responde como asistente para mipymes. Datos de la empresa: {json.dumps(data)}. Mensaje del usuario: {mensaje}"
-        return get_ai_response(prompt, model)
+        respuesta = get_ai_response(prompt, model)
+        return markdown.markdown(respuesta, extensions=['extra'])

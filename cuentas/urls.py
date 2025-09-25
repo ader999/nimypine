@@ -26,5 +26,6 @@ urlpatterns = [
     path('registro/creador/', views.registro_creador_view, name='registro_creador'),
     path('registro/mipyme/', views.registro_mipyme_view, name='registro_mipyme'),
     path('crear-mipyme/', views.crear_mipyme_para_creador_view, name='crear_mipyme_para_creador'),
+    path('no-mipyme-asociada/', views.no_mipyme_asociada, name='no_mipyme_asociada'),
 
 ]

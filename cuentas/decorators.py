@@ -52,7 +52,9 @@ def mipyme_requerida(view_func):
             # Si tiene Mipyme, se ejecuta la vista original.
             return view_func(request, *args, **kwargs)
         else:
-            # Si no tiene Mipyme, renderizamos una plantilla de advertencia.
-            return render(request, 'cuentas/no_mipyme_asociada.html')
+            # Si no tiene Mipyme, redirigir a la página de advertencia.
+            if request.user.is_superuser:
+                return redirect('admin:index')
+            return redirect('cuentas:no_mipyme_asociada')
 
     return wrapper

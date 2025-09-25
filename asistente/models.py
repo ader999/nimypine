@@ -18,3 +18,13 @@ class Mensaje(models.Model):
     def __str__(self):
         tipo = "Usuario" if self.es_usuario else "Asistente"
         return f"{tipo}: {self.contenido[:50]}..."
+
+class GuiaUsuario(models.Model):
+    titulo = models.CharField(max_length=200)
+    descripcion = models.TextField(blank=True, null=True)
+    pasos = models.TextField()  # Pasos en formato texto o JSON
+    palabras_clave = models.CharField(max_length=500, blank=True, null=True)  # Para buscar coincidencias
+    activo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.titulo

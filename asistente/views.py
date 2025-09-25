@@ -12,7 +12,7 @@ from django.core.files.base import ContentFile
 from django.conf import settings
 from django.core.files.storage import default_storage
 from cuentas.models import Mipyme
-from produccion.models import Producto, Insumo, Venta, VentaItem
+from produccion.models import Producto, Insumo, Venta, VentaItem, Proceso, PasoDeProduccion, Formulacion
 from .models import Conversacion, Mensaje, GuiaUsuario
 import openai
 import google.generativeai as genai
@@ -63,7 +63,21 @@ def get_company_data(user):
             {
                 'nombre': p.nombre,
                 'precio_venta': float(p.precio_venta) if p.precio_venta else None,
-                'stock_actual': p.stock_actual
+                'stock_actual': p.stock_actual,
+                'formulacion': [
+                    {
+                        'insumo': f.insumo.nombre,
+                        'unidad': f.insumo.unidad.abreviatura,
+                        'cantidad': float(f.cantidad),
+                        'porcentaje_desperdicio': float(f.porcentaje_desperdicio)
+                    } for f in Formulacion.objects.filter(producto=p)
+                ],
+                'pasos_produccion': [
+                    {
+                        'proceso': pdp.proceso.nombre,
+                        'tiempo_minutos': pdp.tiempo_en_minutos
+                    } for pdp in PasoDeProduccion.objects.filter(producto=p)
+                ]
             } for p in Producto.objects.filter(mipyme=mipyme)
         ],
         'insumos': [
@@ -73,10 +87,24 @@ def get_company_data(user):
                 'stock_actual': float(i.stock_actual) if i.stock_actual else None
             } for i in Insumo.objects.filter(mipyme=mipyme)
         ],
+        'procesos': [
+            {
+                'nombre': pr.nombre,
+                'costo_por_hora': float(pr.costo_por_hora)
+            } for pr in Proceso.objects.filter(mipyme=mipyme)
+        ],
         'ventas': [
             {
                 'fecha': str(v.fecha),
-                'total': float(v.total) if v.total else None
+                'total': float(v.total) if v.total else None,
+                'items': [
+                    {
+                        'producto': vi.producto.nombre,
+                        'cantidad': vi.cantidad,
+                        'precio_unitario': float(vi.precio_unitario),
+                        'subtotal': float(vi.subtotal)
+                    } for vi in VentaItem.objects.filter(venta=v)
+                ]
             } for v in Venta.objects.filter(mipyme=mipyme)
         ],
     }
@@ -167,6 +195,16 @@ def asistente_view(request, conversacion_id=None):
 def procesar_mensaje(mensaje, user, model='openai'):
     mensaje_lower = mensaje.lower()
 
+    # Validación previa: verificar si el mensaje está relacionado con temas de mipymes
+    palabras_clave = [
+        'produccion', 'insumo', 'venta', 'proceso', 'formulacion', 'producto', 'mipyme',
+        'empresa', 'ventas', 'facturacion', 'estandarizar', 'sql', 'codigo', 'grafico',
+        'agregar', 'registrar', 'crear', 'materia prima', 'materias primas', 'pasos produccion',
+        'produccion pasos', 'datos empresa'
+    ]
+    if not any(kw in mensaje_lower for kw in palabras_clave):
+        return "Lo siento, solo puedo ayudarte con temas relacionados con la gestión de tu mipyme, como producción, ventas, insumos o procesos. ¿En qué puedo asistirte en esos aspectos?"
+
     if 'estandarizar' in mensaje_lower:
         data = get_company_data(user)
         prompt = f"Sugerencias para estandarizar productos basadas en estos datos: {json.dumps(data)}"
@@ -198,6 +236,30 @@ def procesar_mensaje(mensaje, user, model='openai'):
         ventas = Venta.objects.filter(mipyme=user.mipyme)
         return '\n'.join([f"Venta #{v.id}: ${v.total} - {v.fecha}" for v in ventas])
 
+    elif 'procesos' in mensaje_lower:
+        procesos = Proceso.objects.filter(mipyme=user.mipyme)
+        return '\n'.join([f"{p.nombre}: ${p.costo_por_hora}/hora" for p in procesos])
+
+    elif 'formulacion' in mensaje_lower:
+        productos = Producto.objects.filter(mipyme=user.mipyme)
+        response = ""
+        for p in productos:
+            response += f"\nProducto: {p.nombre}\n"
+            formulaciones = Formulacion.objects.filter(producto=p)
+            for f in formulaciones:
+                response += f"  - {f.insumo.nombre}: {f.cantidad} {f.insumo.unidad.abreviatura} (desperdicio: {f.porcentaje_desperdicio}%)\n"
+        return response
+
+    elif 'pasos produccion' in mensaje_lower or 'produccion pasos' in mensaje_lower:
+        productos = Producto.objects.filter(mipyme=user.mipyme)
+        response = ""
+        for p in productos:
+            response += f"\nProducto: {p.nombre}\n"
+            pasos = PasoDeProduccion.objects.filter(producto=p)
+            for paso in pasos:
+                response += f"  - {paso.proceso.nombre}: {paso.tiempo_en_minutos} minutos\n"
+        return response
+
     elif 'sql' in mensaje_lower:
         # Extraer query SQL del mensaje
         query = mensaje.split('sql')[1].strip()
@@ -223,6 +285,6 @@ def procesar_mensaje(mensaje, user, model='openai'):
     else:
         # Respuesta general con AI
         data = get_company_data(user)
-        prompt = f"Responde como asistente para mipymes. Datos de la empresa: {json.dumps(data)}. Mensaje del usuario: {mensaje}"
+        prompt = f"Eres un asistente virtual especializado en ayudar con la gestión de mipymes. Solo responde preguntas relacionadas con producción, ventas, insumos, procesos y datos de la empresa. Si la pregunta no está relacionada con estos temas, responde cortésmente que no puedes ayudar con eso y sugiere volver al tema principal. Datos de la empresa: {json.dumps(data)}. Mensaje del usuario: {mensaje}"
         respuesta = get_ai_response(prompt, model)
         return markdown.markdown(respuesta, extensions=['extra'])

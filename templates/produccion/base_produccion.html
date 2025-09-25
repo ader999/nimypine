@@ -52,18 +52,45 @@
             border-bottom: 1px solid #dee2e6;
             margin-bottom: 2rem;
         }
+        @media (max-width: 900px) {
+            body {
+                display: block;
+            }
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 0;
+                height: 100vh;
+                z-index: 1000;
+                transition: left 0.3s;
+                overflow-y: auto;
+            }
+            .sidebar.show {
+                left: 0;
+            }
+            .content {
+                margin-left: 0;
+            }
+            body.no-scroll, html.no-scroll {
+                overflow: hidden;
+            }
+        }
     </style>
 </head>
 <body>
 
     <!-- Menú Lateral Izquierdo (Sidebar) -->
     <div class="sidebar d-flex flex-column flex-shrink-0 p-3 text-white bg-dark">
-        <a href="{% url 'produccion:panel' %}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
-           <!--  <i class="bi bi-box-seam fs-4 me-2"></i>
-            <span class="fs-4">Producción</span> -->
-            <span class="fs-4">{{ nombrepine }}</span>
-
-        </a>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <a href="{% url 'produccion:panel' %}" class="d-flex align-items-center text-white text-decoration-none">
+               <!--  <i class="bi bi-box-seam fs-4 me-2"></i>
+                 <span class="fs-4">Producción</span> -->
+                 <span class="fs-4">{{ nombrepine }}</span>
+            </a>
+            <button class="btn btn-outline-light d-lg-none" id="sidebar-close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
         <hr>
         <ul class="nav nav-pills flex-column mb-auto">
             <li class="nav-item">
@@ -152,7 +179,12 @@
     <div class="content">
         <!-- Encabezado con información -->
         <div class="header-info d-flex justify-content-between align-items-center">
-            <h1 class="h3">{% block page_title %}Título de la Página{% endblock %}</h1>
+            <div class="d-flex align-items-center">
+                <button class="btn btn-outline-secondary d-lg-none me-2" id="sidebar-toggle">
+                    <i class="bi bi-list"></i>
+                </button>
+                <h1 class="h3">{% block page_title %}Título de la Página{% endblock %}</h1>
+            </div>
             <div class="d-flex align-items-center">
                 {% block extra_buttons %}{% endblock %}
                 <span class="ms-3">Bienvenido, <strong>{{ request.user.username }}</strong></span>
@@ -190,5 +222,22 @@
 
     <!-- Bootstrap JS (Bundle) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+    <!-- JavaScript personalizado -->
+    <script>
+        $(document).ready(function() {
+            $('#sidebar-toggle').click(function() {
+                $('.sidebar').toggleClass('show');
+                $('body, html').toggleClass('no-scroll');
+            });
+            $('#sidebar-close').click(function() {
+                $('.sidebar').removeClass('show');
+                $('body, html').removeClass('no-scroll');
+            });
+            $('.sidebar').on('wheel touchmove', function(e) {
+                e.stopPropagation();
+            });
+        });
+    </script>
 </body>
 </html>

@@ -14,7 +14,7 @@
         </h5>
         <hr>
 
-        <form method="post" novalidate>
+        <form method="post" novalidate id="insumo-form">
             {% csrf_token %}
 
             {% for field in form %}
@@ -31,7 +31,7 @@
                     <i class="bi bi-x-circle me-1"></i> Cancelar
                 </a>
                 <!-- Botón dinámico -->
-                <button type="submit" class="btn btn-success">
+                <button type="submit" class="btn btn-success" id="submit-btn">
                     <i class="bi bi-check-circle-fill me-1"></i>
                     {% if insumo %}Guardar Cambios{% else %}Guardar Insumo{% endif %}
                 </button>
@@ -39,4 +39,13 @@
         </form>
     </div>
 </div>
+
+<script>
+document.getElementById('insumo-form').addEventListener('submit', function() {
+    var btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Guardando...';
+});
+</script>
+
 {% endblock %}

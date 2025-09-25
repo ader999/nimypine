@@ -9,7 +9,7 @@
     <div class="col-lg-8">
         <div class="card">
             <div class="card-body">
-                <form method="post">
+                <form method="post" id="proceso-form">
                     {% csrf_token %}
 
                     <div class="mb-3">
@@ -24,7 +24,7 @@
 
                     <div class="d-flex justify-content-end">
                          <a href="{% url 'produccion:lista_procesos' %}" class="btn btn-secondary me-2">Cancelar</a>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary" id="submit-btn">
                            <i class="bi bi-check-circle-fill me-2"></i> {% if proceso %}Actualizar Proceso{% else %}Guardar Proceso{% endif %}
                         </button>
                     </div>
@@ -32,5 +32,12 @@
             </div>
         </div>
     </div>
+<script>
+document.getElementById('proceso-form').addEventListener('submit', function() {
+    var btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Guardando...';
+});
+</script>
 </div>
 {% endblock %}

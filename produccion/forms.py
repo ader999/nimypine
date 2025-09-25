@@ -18,11 +18,11 @@ class ProductoForm(forms.ModelForm):
             'descripcion': 'Descripción (opcional)',
             'porcentaje_ganancia': 'Porcentaje de Ganancia (%)',
             'stock_actual': 'Stock Inicial (unidades)',
-            'peso': 'Peso (kg)',
-            'tamano_largo': 'Largo (cm)',
-            'tamano_ancho': 'Ancho (cm)',
-            'tamano_alto': 'Alto (cm)',
-            'presentacion': 'Presentación',
+            'peso': 'Peso (kg) - Opcional',
+            'tamano_largo': 'Largo (cm) - Opcional',
+            'tamano_ancho': 'Ancho (cm) - Opcional',
+            'tamano_alto': 'Alto (cm) - Opcional',
+            'presentacion': 'Presentación - Opcional',
         }
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Tarta de Chocolate'}),
@@ -47,6 +47,13 @@ class ProductoForm(forms.ModelForm):
             # Remover el campo porcentaje_ganancia del formulario
             if 'porcentaje_ganancia' in self.fields:
                 del self.fields['porcentaje_ganancia']
+
+        # Hacer opcionales los campos de dimensiones
+        self.fields['peso'].required = False
+        self.fields['tamano_largo'].required = False
+        self.fields['tamano_ancho'].required = False
+        self.fields['tamano_alto'].required = False
+        self.fields['presentacion'].required = False
 
     def clean(self):
         cleaned_data = super().clean()

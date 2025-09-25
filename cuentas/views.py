@@ -48,6 +48,7 @@ def lista_usuarios_mipyme(request):
 
     contexto = {
         'equipo': usuarios_equipo,
+        'nombrepine': request.user.mipyme.nombre
     }
     # Usaremos una plantilla dentro de la app 'cuentas'
     return render(request, 'cuentas/lista_equipo.html', contexto)

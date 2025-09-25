@@ -216,6 +216,7 @@ def editar_producto(request, producto_id):
             if usar_porcentaje_predeterminado:
                 producto_editado.porcentaje_ganancia = mipyme.porcentaje_ganancia_predeterminado
             producto_editado.save()
+
             return redirect('produccion:lista_productos') # Redirigimos a la lista de productos
     else:
         # Si es GET, mostramos el formulario pre-llenado con los datos del producto

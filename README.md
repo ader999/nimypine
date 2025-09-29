@@ -1,0 +1,2 @@
+es una aplicación wed que apoya pequeñas y medianas empresas en la gestión de recursos y utilidades evitando el gasto inesesario de recursos, aplicando un presupuesto en base a los datos aportados por el usuario.
+Entre los recursos que podemos tomar son muy variados desde materiales generales para carpinteria hasta pequeñas impresas de trabo en papelería con diferentes medidas métricas como centímetros, metros o yardas entre otros 

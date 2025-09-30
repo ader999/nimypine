@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "produccion",
     "asistente",
     "minio_storage",
+    "django_extensions",
 ]
 
 # --- Middleware ---

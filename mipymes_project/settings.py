@@ -45,7 +45,6 @@ INSTALLED_APPS = [
     "produccion",
     "asistente",
     "minio_storage",
-    "django_extensions",
 ]
 
 # --- Middleware ---
@@ -134,12 +133,22 @@ PAYPAL_CLIENT_ID = env('PAYPAL_ID_CLIENT')
 PAYPAL_CLIENT_SECRET = env('PAYPAL_KEY')
 PAYPAL_MODE = 'sandbox'  # Cambiar a 'live' para producción
 
-
-
+# Email settings
+EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = env.int('EMAIL_PORT', default=587)
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
+EMAIL_HOST_USER = env('EMAIL_USER', default='noreply@nimypine.com')
+EMAIL_HOST_PASSWORD = env('EMAIL_PWS', default='')
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # --- Resto de la Configuración ---
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = 'cuentas.Usuario'
+AUTHENTICATION_BACKENDS = [
+    'cuentas.backends.EmailOrUsernameModelBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 LOGIN_URL = 'cuentas:login'

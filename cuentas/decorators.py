@@ -30,6 +30,28 @@ def rol_requerido(*roles_permitidos):
             raise PermissionDenied
 
         return wrapper
+    
+    
+    def email_confirmado_requerido(view_func):
+        """
+        Decorador que verifica si un usuario autenticado tiene el email confirmado.
+        Si no lo tiene, redirige a la página de confirmación.
+        """
+    
+        @wraps(view_func)
+        def wrapper(request, *args, **kwargs):
+            # Primero, asegurarnos de que el usuario está logueado
+            if not request.user.is_authenticated:
+                return redirect('cuentas:login')
+    
+            # Comprobación: ¿tiene el usuario el email confirmado?
+            if request.user.email_confirmado:
+                return view_func(request, *args, **kwargs)
+            else:
+                # Si no tiene email confirmado, redirigir a confirmación
+                return redirect('cuentas:confirmar_email')
+    
+        return wrapper
 
     return decorator
 

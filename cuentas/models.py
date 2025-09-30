@@ -114,6 +114,10 @@ class Usuario(AbstractUser):
     # Campo para avatar
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True, verbose_name="Avatar")
 
+    # Campos para confirmación de email
+    email_confirmado = models.BooleanField(default=False, verbose_name="Email confirmado")
+    codigo_confirmacion = models.CharField(max_length=6, null=True, blank=True, verbose_name="Código de confirmación")
+
     def __str__(self):
         return self.username
 

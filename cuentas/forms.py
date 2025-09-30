@@ -41,17 +41,11 @@ class RegistroMipymeForm(forms.Form):
     # --- Datos de la Empresa ---
     nombre_empresa = forms.CharField(max_length=255, required=True, label="Nombre de la Empresa")
     identificador_fiscal = forms.CharField(max_length=50, required=False, label="Identificador Fiscal RFC, RUT, etc. (Opcional)")
-    tipo_empresa = forms.ModelChoiceField(
-        queryset=TipoEmpresa.objects.all(),
-        required=True,
-        label="Tipo de Empresa",
-        empty_label="Selecciona una categoría"
-    )
     sector_economico = forms.ModelChoiceField(
         queryset=SectorEconomico.objects.all(),
         required=True,
-        label="Sector Económico",
-        empty_label="Selecciona un sector"
+        label="Tipo de Empresa",
+        empty_label="Selecciona un tipo"
     )
 
     # --- Datos del Administrador (NUEVOS CAMPOS) ---
@@ -63,6 +57,12 @@ class RegistroMipymeForm(forms.Form):
     password_confirmacion = forms.CharField(widget=forms.PasswordInput, required=True, label="Confirmar Contraseña")
 
     # El resto de los métodos de validación se quedan igual
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if Usuario.objects.filter(email=email).exists():
+            raise forms.ValidationError("Este correo electrónico ya está en uso.")
+        return email
+
     def clean_password_confirmacion(self):
         password = self.cleaned_data.get("password")
         password_confirmacion = self.cleaned_data.get("password_confirmacion")

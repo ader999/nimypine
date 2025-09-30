@@ -32,17 +32,16 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="{{ form.tipo_empresa.id_for_label }}" class="form-label">{{ form.tipo_empresa.label }}</label>
-                        {{ form.tipo_empresa }}
-                         {% if form.tipo_empresa.errors %}<div class="text-danger small mt-1">{{ form.tipo_empresa.errors.as_text }}</div>{% endif %}
-                    </div>
-
-                    <div class="mb-4">
                         <label for="{{ form.identificador_fiscal.id_for_label }}" class="form-label">{{ form.identificador_fiscal.label }}</label>
                         {{ form.identificador_fiscal }}
                         {% if form.identificador_fiscal.errors %}<div class="text-danger small mt-1">{{ form.identificador_fiscal.errors.as_text }}</div>{% endif %}
                     </div>
 
+                    <div class="mb-4">
+                        <label for="{{ form.sector_economico.id_for_label }}" class="form-label">{{ form.sector_economico.label }}</label>
+                        {{ form.sector_economico }}
+                        {% if form.sector_economico.errors %}<div class="text-danger small mt-1">{{ form.sector_economico.errors.as_text }}</div>{% endif %}
+                    </div>
 
                     <!-- === SECCIÓN: DATOS DEL ADMINISTRADOR === -->
                     <h4 class="mb-3 mt-5 border-bottom pb-2">Datos del Administrador</h4>

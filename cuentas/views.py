@@ -1,12 +1,58 @@
 # cuentas/views.py
 import re
+import random
+import string
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login
+from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib import messages
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.urls import reverse
 from .decorators import rol_requerido
 from .forms import RegistroMipymeForm, CreacionUsuarioMipymeForm, EditarRolUsuarioForm, RegistroCreadorForm, SoloMipymeForm
 from .models import Mipyme, Usuario
 from .funciones import generar_username_unico
+
+
+def enviar_email_confirmacion(user):
+    codigo = ''.join(random.choices(string.digits, k=6))
+    user.codigo_confirmacion = codigo
+    user.save()
+    subject = 'Confirma tu correo electrónico'
+    html_message = render_to_string('cuentas/email_confirmacion.html', {'codigo': codigo})
+    send_mail(subject, '', None, [user.email], html_message=html_message)
+
+
+def enviar_email_bienvenida(user):
+    subject = 'Bienvenido a NimyPine - Tus credenciales de acceso'
+    html_message = render_to_string('cuentas/email_bienvenida.html', {'user': user})
+    send_mail(subject, '', None, [user.email], html_message=html_message)
+
+
+def login_view(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            if user.email_confirmado:
+                login(request, user)
+                return redirect('cuentas:inicio')  # O a donde corresponda
+            else:
+                # Usuario no confirmado, enviar a confirmación
+                enviar_email_confirmacion(user)
+                request.session['user_id_confirmacion'] = user.id
+                messages.info(request, 'Tu email no está confirmado. Revisa tu correo para el código de confirmación.')
+                return redirect('cuentas:confirmar_email')
+        else:
+            messages.error(request, 'Credenciales inválidas.')
+    else:
+        form = AuthenticationForm()
+    form.fields['username'].widget.attrs.update({'class': 'form-control'})
+    form.fields['username'].label = 'Usuario o Email'
+    form.fields['password'].widget.attrs.update({'class': 'form-control'})
+    return render(request, 'cuentas/login.html', {'form': form})
 
 
 def pagina_inicio(request):
@@ -75,8 +121,15 @@ def registro_creador_view(request):
                 last_name=datos['last_name'],
                 es_creador_contenido=True # ¡La clave está aquí!
             )
-            login(request, usuario)
-            return redirect('marketplace_listado') # O a donde quieras dirigirlo
+            enviar_email_confirmacion(usuario)
+            request.session['user_id_confirmacion'] = usuario.id
+            messages.success(request, 'Usuario creado. Revisa tu correo para confirmar tu email.')
+            return redirect('cuentas:confirmar_email')
+        else:
+            messages.error(request, 'Por favor corrige los errores en el formulario.')
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
     else:
         form = RegistroCreadorForm()
     return render(request, 'cuentas/registro_creador.html', {'form': form})
@@ -91,7 +144,6 @@ def registro_mipyme_view(request):
             mipyme = Mipyme.objects.create(
                 nombre=datos['nombre_empresa'],
                 identificador_fiscal=datos.get('identificador_fiscal'),
-                tipo=datos['tipo_empresa'],
                 sector=datos['sector_economico']
             )
             # 2. Crear el Usuario Administrador
@@ -106,8 +158,12 @@ def registro_mipyme_view(request):
                 es_admin_mipyme=True,
                 es_creador_contenido = True
             )
-            login(request, admin_usuario)
-            return redirect('produccion:panel') # O al panel de la Mipyme
+            enviar_email_confirmacion(admin_usuario)
+            request.session['user_id_confirmacion'] = admin_usuario.id
+            messages.success(request, 'Usuario creado. Revisa tu correo para confirmar tu email.')
+            return redirect('cuentas:confirmar_email')
+        else:
+            messages.error(request, 'Por favor corrige los errores en el formulario.')
     else:
         form = RegistroMipymeForm()
     return render(request, 'cuentas/registro_mipyme.html', {'form': form})
@@ -154,6 +210,35 @@ def gestionar_rol_usuario(request, usuario_id):
         'usuario_a_editar': usuario_a_editar
     }
     return render(request, 'cuentas/gestionar_rol.html', contexto)
+
+
+def confirmar_email_view(request):
+    if request.method == 'POST':
+        codigo = request.POST.get('codigo')
+        user_id = request.session.get('user_id_confirmacion')
+        if user_id:
+            try:
+                user = Usuario.objects.get(id=user_id)
+                if user.codigo_confirmacion == codigo:
+                    user.email_confirmado = True
+                    user.codigo_confirmacion = None
+                    user.save()
+                    enviar_email_bienvenida(user)
+                    del request.session['user_id_confirmacion']
+                    login(request, user)
+                    messages.success(request, 'Email confirmado exitosamente. Bienvenido!')
+                    if user.mipyme:
+                        return redirect('produccion:panel')
+                    else:
+                        return redirect('marketplace_listado')
+                else:
+                    messages.error(request, 'Código incorrecto. Inténtalo de nuevo.')
+            except Usuario.DoesNotExist:
+                messages.error(request, 'Usuario no encontrado.')
+        else:
+            messages.error(request, 'Sesión expirada. Regístrate de nuevo.')
+            return redirect('cuentas:seleccion_registro')
+    return render(request, 'cuentas/confirmar_email.html')
 
 
 def manejador_error_403(request, exception):

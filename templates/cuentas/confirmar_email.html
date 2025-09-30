@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Email{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Confirma tu correo electrónico</h3>
+                </div>
+                <div class="card-body">
+                    <p>Ingresa el código de 6 dígitos que enviamos a tu correo electrónico.</p>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="codigo">Código de confirmación:</label>
+                            <input type="text" class="form-control" id="codigo" name="codigo" maxlength="6" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Confirmar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

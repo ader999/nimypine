@@ -1,0 +1,59 @@
+<!-- produccion/templates/produccion/lista_insumos.html -->
+{% extends 'produccion/base_produccion.html' %}
+
+{% block title %}Listado de Insumos{% endblock %}
+
+{% block page_title %}Gestión de Insumos y Materia Prima{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Mi Inventario de Insumos</h5>
+        <a href="{% url 'produccion:crear_insumo' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle me-1"></i> Registrar Nuevo Insumo
+        </a>
+    </div>
+    <div class="card-body">
+        {% if insumos %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th scope="col">Nombre del Insumo</th>
+                            <th scope="col">Costo Unitario</th>
+                            <th scope="col">Stock Actual</th>
+                            <th scope="col">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for insumo in insumos %}
+                        <tr>
+                            <td><strong>{{ insumo.nombre }}</strong></td>
+                            <td>${{ insumo.costo_unitario|floatformat:2 }} / {{ insumo.unidad.abreviatura }}</td>
+                            <td>{{ insumo.stock_actual|floatformat:2 }} {{ insumo.unidad.abreviatura }}</td>
+                            <td>
+                                <!-- Estos botones los activaremos en los siguientes pasos -->
+                                <a href="{% url 'produccion:editar_insumo' insumo.id %}" class="btn btn-sm btn-warning" title="Editar Insumo">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </a>
+                                <form method="post" action="{% url 'produccion:eliminar_insumo' insumo.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Eliminar"
+                                            onclick="return confirm('¿Estás seguro de que quieres eliminar este insumo? Esta acción no se puede deshacer.');">
+                                        <i class="bi bi-trash-fill"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-warning text-center">
+                <p class="mb-0">Aún no has registrado ningún insumo. ¡Empieza registrando tu materia prima!</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

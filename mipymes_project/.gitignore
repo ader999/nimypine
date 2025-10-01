@@ -1,0 +1,8 @@
+db.sqlite3
+.env
+ cuentas/__pycache__/
+ cuentas/migrations/__pycache__/
+ marketplace/__pycache__/
+ mipymes_project/__pycache__/
+produccion/__pycache__/
+/staticfiles

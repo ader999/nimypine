@@ -22,13 +22,27 @@ def enviar_email_confirmacion(user):
     user.save()
     subject = 'Confirma tu correo electrónico'
     html_message = render_to_string('cuentas/email_confirmacion.html', {'codigo': codigo})
-    send_mail(subject, '', None, [user.email], html_message=html_message)
+    send_mail(
+        subject=subject,
+        message='',
+        from_email=None,
+        recipient_list=[user.email],
+        html_message=html_message,
+        fail_silently=False
+    )
 
 
 def enviar_email_bienvenida(user):
     subject = 'Bienvenido a NimyPine - Tus credenciales de acceso'
     html_message = render_to_string('cuentas/email_bienvenida.html', {'user': user})
-    send_mail(subject, '', None, [user.email], html_message=html_message)
+    send_mail(
+        subject=subject,
+        message='',
+        from_email=None,
+        recipient_list=[user.email],
+        html_message=html_message,
+        fail_silently=False
+    )
 
 
 def login_view(request):
@@ -139,29 +153,33 @@ def registro_mipyme_view(request):
     if request.method == 'POST':
         form = RegistroMipymeForm(request.POST)
         if form.is_valid():
-            datos = form.cleaned_data
-            # 1. Crear la Mipyme
-            mipyme = Mipyme.objects.create(
-                nombre=datos['nombre_empresa'],
-                identificador_fiscal=datos.get('identificador_fiscal'),
-                sector=datos['sector_economico']
-            )
-            # 2. Crear el Usuario Administrador
-            username = generar_username_unico(datos['first_name'], datos['last_name'])
-            admin_usuario = Usuario.objects.create_user(
-                username=username,
-                email=datos['email'],
-                password=datos['password'],
-                first_name=datos['first_name'],
-                last_name=datos['last_name'],
-                mipyme=mipyme, # Lo asociamos a la nueva Mipyme
-                es_admin_mipyme=True,
-                es_creador_contenido = True
-            )
-            enviar_email_confirmacion(admin_usuario)
-            request.session['user_id_confirmacion'] = admin_usuario.id
-            messages.success(request, 'Usuario creado. Revisa tu correo para confirmar tu email.')
-            return redirect('cuentas:confirmar_email')
+            try:
+                datos = form.cleaned_data
+                # 1. Crear la Mipyme
+                mipyme = Mipyme.objects.create(
+                    nombre=datos['nombre_empresa'],
+                    identificador_fiscal=datos.get('identificador_fiscal'),
+                    sector=datos['sector_economico']
+                )
+                # 2. Crear el Usuario Administrador
+                username = generar_username_unico(datos['first_name'], datos['last_name'])
+                admin_usuario = Usuario.objects.create_user(
+                    username=username,
+                    email=datos['email'],
+                    password=datos['password'],
+                    first_name=datos['first_name'],
+                    last_name=datos['last_name'],
+                    mipyme=mipyme,  # Lo asociamos a la nueva Mipyme
+                    es_admin_mipyme=True,
+                    es_creador_contenido=True
+                )
+                enviar_email_confirmacion(admin_usuario)
+                request.session['user_id_confirmacion'] = admin_usuario.id
+                messages.success(request, 'Usuario creado. Revisa tu correo para confirmar tu email.')
+                return redirect('cuentas:confirmar_email')
+            except Exception as e:
+                messages.error(request, f'Error al registrar la Mipyme: {e}. Asegúrate de que la base de datos esté configurada y accesible.')
+
         else:
             messages.error(request, 'Por favor corrige los errores en el formulario.')
     else:
@@ -225,7 +243,8 @@ def confirmar_email_view(request):
                     user.save()
                     enviar_email_bienvenida(user)
                     del request.session['user_id_confirmacion']
-                    login(request, user)
+                    # Especificar el backend de autenticación explícitamente
+                    login(request, user, backend='cuentas.backends.EmailOrUsernameModelBackend')
                     messages.success(request, 'Email confirmado exitosamente. Bienvenido!')
                     if user.mipyme:
                         return redirect('produccion:panel')
@@ -263,6 +282,22 @@ def no_mipyme_asociada(request):
     """
     return render(request, 'cuentas/no_mipyme_asociada.html')
 
+def test_email_view(request):
+    """
+    Vista para probar el envío de emails.
+    """
+    try:
+        send_mail(
+            subject='Test Email from MiPymes',
+            message='This is a test email to verify that the email configuration is working correctly.',
+            from_email=None,
+            recipient_list=['aderjasmirzeasrocha@gmail.com'],
+            fail_silently=False
+        )
+        messages.success(request, 'Test email sent successfully to aderjasmirzeasrocha@gmail.com')
+    except Exception as e:
+        messages.error(request, f'Failed to send test email: {str(e)}')
+    return redirect('cuentas:seleccion_registro')
 def manejador_error_500(request):
     """
     Vista para manejar los errores 500 (Error interno del servidor).

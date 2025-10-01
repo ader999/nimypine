@@ -1,0 +1,223 @@
+<!-- produccion/templates/produccion/detalle_producto.html -->
+{% extends 'produccion/base_produccion.html' %}
+
+{% block title %}Detalle de {{ producto.nombre }}{% endblock %}
+
+{% block page_title %}Detalle de Producto: {{ producto.nombre }}{% endblock %}
+
+{% block content %}
+<!-- Fila para Resumen del Producto en formato de tabla -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">Resumen Financiero y de Inventario</h5>
+            </div>
+            <div class="card-body p-0"> <!-- Eliminamos el padding para que la tabla se ajuste perfecto -->
+                <div class="table-responsive">
+                    <table class="table table-bordered mb-0">
+                        <tbody>
+                            <!-- Sección Financiera -->
+                            <tr>
+                                <td class="w-25"><strong>Precio de Venta (PVP)</strong></td>
+                                <td class="fs-5">${{ producto.precio_venta|floatformat:2 }}</td>
+                            </tr>
+                            <tr class="table-light">
+                                <td><strong>Costo de Producción Total</strong></td>
+                                <td class="fs-5">${{ producto.costo_de_produccion|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <!-- Usamos un poco de estilo para indentar y mostrar jerarquía -->
+                                <td style="padding-left: 2.5rem;"><small>↳ Costo de Insumos</small></td>
+                                <td><small>${{ producto.costo_insumos|floatformat:2 }} (incluye desperdicio)</small></td>
+                            </tr>
+                            <tr>
+                                <td style="padding-left: 2.5rem;"><small>↳ Costo de Procesos</small></td>
+                                <td><small>${{ producto.costo_procesos|floatformat:2 }} (mano de obra/máquina)</small></td>
+                            </tr>
+                            <tr class="table-success">
+                                <td><strong>Margen de Ganancia (Unitario)</strong></td>
+                                <td class="fs-5 fw-bold">${{ producto.margen_de_ganancia|floatformat:2 }}</td>
+                            </tr>
+
+                            <!-- Separador Visual -->
+                            <tr class="table-group-divider">
+                                <td colspan="2"></td>
+                            </tr>
+
+                            <!-- Sección de Inventario y Descripción -->
+                            <tr>
+                                <td><strong>Stock Actual</strong></td>
+                                <td><strong>{{ producto.stock_actual }}</strong> unidades</td>
+                            </tr>
+                             <tr>
+                                <td><strong>Descripción</strong></td>
+                                <td>{{ producto.descripcion|default:"No especificada"|linebreaksbr }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Fila para la Formulación (Insumos) -->
+<div class="row mb-4">
+    <!-- Columna de la Tabla de Insumos -->
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header"><h5 class="mb-0"><i class="bi bi-archive-fill me-2"></i>Formulación de Insumos</h5></div>
+            <div class="card-body">
+                {% if formulacion_items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Insumo</th>
+                                    <th>Cantidad / Desperdicio</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in formulacion_items %}
+                                <tr>
+                                    <td>{{ item.insumo.nombre }}</td>
+                                    <td>
+                                        {{ item.cantidad|floatformat:2 }} {{ item.insumo.unidad.abreviatura }}
+                                        <small class="d-block text-muted">({{ item.porcentaje_desperdicio|floatformat:2 }}% desperdicio)</small>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'produccion:editar_formulacion_item' producto.id item.id %}" class="btn btn-sm btn-warning" title="Editar">
+                                            <i class="bi bi-pencil-fill"></i>
+                                        </a>
+                                        <form method="post" action="{% url 'produccion:eliminar_formulacion_item' producto.id item.id %}" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-danger" title="Eliminar"
+                                                    onclick="return confirm('¿Estás seguro de que quieres quitar este insumo?');">
+                                                <i class="bi bi-trash-fill"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">Aún no has añadido insumos a esta receta.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna del Formulario para Añadir Insumo -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header"><h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Añadir Insumo</h5></div>
+            <div class="card-body">
+                <!-- NOTA: El name="submit_insumo" es clave para que la vista sepa qué formulario se envió -->
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ form_insumo.insumo.id_for_label }}" class="form-label">Insumo</label>
+                        {{ form_insumo.insumo }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form_insumo.cantidad.id_for_label }}" class="form-label">Cantidad</label>
+                        {{ form_insumo.cantidad }}
+                    </div>
+                    <!-- CAMPO NUEVO: Porcentaje de Desperdicio -->
+                    <div class="mb-3">
+                        <label for="{{ form_insumo.porcentaje_desperdicio.id_for_label }}" class="form-label">% Desperdicio</label>
+                        {{ form_insumo.porcentaje_desperdicio }}
+                    </div>
+                    <button type="submit" name="submit_insumo" class="btn btn-success w-100">
+                        <i class="bi bi-check-circle-fill me-1"></i> Guardar en Receta
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ================================================================== -->
+<!-- NUEVA FILA: Para la Ruta de Producción (Procesos) -->
+<!-- ================================================================== -->
+<div class="row">
+    <!-- Columna de la Tabla de Procesos -->
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header"><h5 class="mb-0"><i class="bi bi-gear-wide-connected me-2"></i>Ruta de Producción (Procesos)</h5></div>
+            <div class="card-body">
+                {% if pasos_produccion %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Proceso</th>
+                                    <th>Tiempo Requerido</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for paso in pasos_produccion %}
+                                <tr>
+                                    <td>{{ paso.proceso.nombre }}</td>
+                                    <td>{{ paso.tiempo_en_minutos }} minutos</td>
+                                    <td>
+                                        <a href="{% url 'produccion:editar_paso_produccion' producto.id paso.id %}" class="btn btn-sm btn-warning" title="Editar">
+                                            <i class="bi bi-pencil-fill"></i>
+                                        </a>
+                                        <form method="post" action="{% url 'produccion:eliminar_paso_produccion' producto.id paso.id %}" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-danger" title="Eliminar"
+                                                    onclick="return confirm('¿Estás seguro de que quieres quitar este proceso?');">
+                                                <i class="bi bi-trash-fill"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">Aún no has añadido procesos a la ruta de producción.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna del Formulario para Añadir Proceso -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header"><h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Añadir Proceso</h5></div>
+            <div class="card-body">
+                 <!-- NOTA: El name="submit_proceso" es clave para que la vista sepa qué formulario se envió -->
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ form_proceso.proceso.id_for_label }}" class="form-label">Proceso</label>
+                        {{ form_proceso.proceso }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form_proceso.tiempo_en_minutos.id_for_label }}" class="form-label">Tiempo (minutos)</label>
+                        {{ form_proceso.tiempo_en_minutos }}
+                    </div>
+                    <button type="submit" name="submit_proceso" class="btn btn-success w-100">
+                        <i class="bi bi-check-circle-fill me-1"></i> Guardar en Ruta
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="mt-4">
+    <a href="{% url 'produccion:lista_productos' %}" class="btn btn-secondary"><i class="bi bi-arrow-left-circle me-1"></i> Volver al Listado</a>
+</div>
+{% endblock %}

@@ -1,7 +1,5 @@
 import os
 import json
-import pandas as pd
-import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
 from django.shortcuts import render, redirect, get_object_or_404
@@ -15,12 +13,10 @@ from cuentas.models import Mipyme
 from produccion.models import Producto, Insumo, Venta, VentaItem, Proceso, PasoDeProduccion, Formulacion
 from .models import Conversacion, Mensaje, GuiaUsuario
 import openai
-import google.generativeai as genai
 import markdown
 
 # Configurar APIs
 openai.api_key = os.getenv('OPENAI_API_KEY')
-genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
 
 def get_ai_response(prompt, model='openai'):
     try:
@@ -31,9 +27,14 @@ def get_ai_response(prompt, model='openai'):
             )
             return response.choices[0].message.content
         elif model == 'gemini':
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            response = model.generate_content(prompt)
-            return response.text
+            try:
+                import google.generativeai as genai
+                genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                response = model.generate_content(prompt)
+                return response.text
+            except ImportError:
+                return "Error: google-generativeai no está disponible."
         elif model == 'deepseek':
             # For DeepSeek, use requests
             import requests
@@ -121,7 +122,18 @@ def execute_sql_query(query):
 def execute_code(code):
     # Ejecutar código de forma segura (limitada)
     try:
-        exec_globals = {'pd': pd, 'plt': plt}
+        exec_globals = {}
+        try:
+            import pandas as pd
+            exec_globals['pd'] = pd
+        except ImportError:
+            pass
+        try:
+            import matplotlib.pyplot as plt
+            exec_globals['plt'] = plt
+        except ImportError:
+            pass
+
         exec(code, exec_globals)
         return "Código ejecutado exitosamente."
     except Exception as e:
@@ -129,6 +141,11 @@ def execute_code(code):
 
 def generate_graph(code):
     try:
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            return "Error: matplotlib no está instalado."
+
         exec(code)
         buf = BytesIO()
         plt.savefig(buf, format='png')

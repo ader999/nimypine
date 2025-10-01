@@ -80,7 +80,10 @@
 
                     <!-- === BOTÓN DE ENVÍO === -->
                     <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg">Crear Cuenta y Registrar Empresa</button>
+                        <button type="submit" class="btn btn-primary btn-lg" id="submit-button">
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none;"></span>
+                            <span class="button-text">Crear Cuenta y Registrar Empresa</span>
+                        </button>
                     </div>
                 </form>
 
@@ -119,4 +122,21 @@ input:focus, select:focus {
     box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, .25);
 }
 </style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const submitButton = document.getElementById('submit-button');
+    const spinner = submitButton.querySelector('.spinner-border');
+    const buttonText = submitButton.querySelector('.button-text');
+
+    form.addEventListener('submit', function() {
+        // Desactivar el botón para evitar envíos múltiples
+        submitButton.disabled = true;
+
+        // Ocultar el texto del botón y mostrar el spinner
+        buttonText.style.display = 'none';
+        spinner.style.display = 'inline-block';
+    });
+});
+</script>
 {% endblock %}

@@ -26,7 +26,7 @@
                 
                 {% if tiene_datos %}
                     <div class="mb-4" style="position: relative; height: 300px;">
-                        <canvas id="rentabilidadChart"></canvas>
+                        <canvas id="rentabilidadChart" data-umbral-perdidas="{{ umbral_perdidas }}" data-umbral-ganancias="{{ umbral_ganancias }}"></canvas>
                     </div>
                     
                     <div class="table-responsive d-none" id="tablaRentabilidad">
@@ -82,9 +82,14 @@
                     </div>
                     
                     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script>
                     <script>
-                    const ctx = document.getElementById('rentabilidadChart').getContext('2d');
+                    const canvas = document.getElementById('rentabilidadChart');
+                    const ctx = canvas.getContext('2d');
                     const chartData = JSON.parse('{{ chart_data|escapejs }}');
+
+                    const umbralPerdidas = parseFloat(canvas.dataset.umbralPerdidas);
+                    const umbralGanancias = parseFloat(canvas.dataset.umbralGanancias);
                     
                     // Configuración de la gráfica
                     const chart = new Chart(ctx, {
@@ -101,6 +106,38 @@
                                     callbacks: {
                                         label: function(context) {
                                             return context.dataset.label + ': $' + context.parsed.y.toFixed(2);
+                                        }
+                                    }
+                                },
+                                annotation: {
+                                    annotations: {
+                                        lineaPerdidas: {
+                                            type: 'line',
+                                            yMin: umbralPerdidas,
+                                            yMax: umbralPerdidas,
+                                            borderColor: 'rgb(255, 99, 132)',
+                                            borderWidth: 2,
+                                            borderDash: [6, 6],
+                                            label: {
+                                                content: 'Umbral de Pérdidas',
+                                                enabled: true,
+                                                position: 'start',
+                                                backgroundColor: 'rgba(255, 99, 132, 0.8)'
+                                            }
+                                        },
+                                        lineaGanancias: {
+                                            type: 'line',
+                                            yMin: umbralGanancias,
+                                            yMax: umbralGanancias,
+                                            borderColor: 'rgb(40, 167, 69)',
+                                            borderWidth: 2,
+                                            borderDash: [6, 6],
+                                            label: {
+                                                content: 'Umbral de Ganancias',
+                                                enabled: true,
+                                                position: 'start',
+                                                backgroundColor: 'rgba(40, 167, 69, 0.8)'
+                                            }
                                         }
                                     }
                                 }
@@ -124,7 +161,7 @@
                             }
                         }
                     });
-                    
+
                     // Función para alternar entre gráfica y tabla
                     function toggleView() {
                         const chartElement = document.getElementById('rentabilidadChart').closest('div');

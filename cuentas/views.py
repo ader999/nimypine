@@ -282,22 +282,6 @@ def no_mipyme_asociada(request):
     """
     return render(request, 'cuentas/no_mipyme_asociada.html')
 
-def test_email_view(request):
-    """
-    Vista para probar el envío de emails.
-    """
-    try:
-        send_mail(
-            subject='Test Email from MiPymes',
-            message='This is a test email to verify that the email configuration is working correctly.',
-            from_email=None,
-            recipient_list=['aderjasmirzeasrocha@gmail.com'],
-            fail_silently=False
-        )
-        messages.success(request, 'Test email sent successfully to aderjasmirzeasrocha@gmail.com')
-    except Exception as e:
-        messages.error(request, f'Failed to send test email: {str(e)}')
-    return redirect('cuentas:seleccion_registro')
 def manejador_error_500(request):
     """
     Vista para manejar los errores 500 (Error interno del servidor).

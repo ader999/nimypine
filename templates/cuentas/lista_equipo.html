@@ -1,0 +1,50 @@
+<!-- cuentas/templates/cuentas/lista_equipo.html -->
+{% extends 'produccion/base_produccion.html' %}
+
+{% block title %}Gestión de Equipo{% endblock %}
+{% block page_title %}Usuarios de tu Mipyme{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Miembros del Equipo</h5>
+        <a href="{% url 'cuentas:crear_usuario_equipo' %}" class="btn btn-success">
+            <i class="bi bi-person-plus-fill me-1"></i> Añadir Nuevo Usuario
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Nombre de Usuario</th>
+                        <th>Nombre Completo</th>
+                        <th>Email</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for miembro in equipo %}
+                    <tr>
+                        <td><strong>{{ miembro.username }}</strong></td>
+                        <td>{{ miembro.get_full_name|default:"-" }}</td>
+                        <td>{{ miembro.email|default:"-" }}</td>
+                        <td>
+                            <!-- Solo el admin de la mipyme o un usuario con rol ADMIN puede cambiar roles -->
+                            {% if request.user.es_admin_mipyme or request.user.rol == 'ADMIN' %}
+                                <a href="{% url 'cuentas:gestionar_rol' miembro.id %}" class="btn btn-sm btn-secondary">
+                                    <i class="bi bi-person-badge"></i> Cambiar Rol ({{ miembro.get_rol_display }})
+                                </a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <!-- Aquí podrías añadir botones para editar o desactivar usuarios en el futuro -->
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

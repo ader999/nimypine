@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Perfil de Creador{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body p-4 p-md-5">
+                <h2 class="card-title text-center mb-4">Perfil de Creador</h2>
+
+                <!-- Estadísticas -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">TotalVentas</h5>
+                                
+                                <p class="card-text display-6">${{ total_ventas }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">Comisión (30%)</h5>
+                                <p class="card-text display-6 text-warning">${{ comision_nimypines }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">Ganancias Netas</h5>
+                                <p class="card-text display-6 text-success">${{ ganancias_netas }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">Descargas Gratuitas</h5>
+                                <p class="card-text display-6">{{ descargas_gratuitas }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <strong>Nota:</strong> NIMYPINES retiene el 30% de las ventas como comisión. Tú recibes el 70% restante.
+                </div>
+
+                <!-- Mis Plantillas -->
+                <h3 class="mb-3">Mis Plantillas</h3>
+                {% if mis_plantillas %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Precio</th>
+                                    <th>Descargas</th>
+                                    <th>Fecha Creación</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for plantilla in mis_plantillas %}
+                                    <tr>
+                                        <td><a href="{% url 'marketplace_detalle' plantilla.id %}">{{ plantilla.nombre }}</a></td>
+                                        <td>${{ plantilla.precio }}</td>
+                                        <td>{{ plantilla.downloads }}</td>
+                                        <td>{{ plantilla.fecha_creacion|date:"d/m/Y" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p>No has subido ninguna plantilla aún.</p>
+                {% endif %}
+
+                <!-- Ventas -->
+                <h3 class="mb-3 mt-4">Ventas</h3>
+                {% if ventas %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Plantilla</th>
+                                    <th>Comprador</th>
+                                    <th>Monto</th>
+                                    <th>Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for venta in ventas %}
+                                    <tr>
+                                        <td>{{ venta.plantilla.nombre }}</td>
+                                        <td>{{ venta.usuario.username }}</td>
+                                        <td>${{ venta.amount }}</td>
+                                        <td>{{ venta.fecha_compra|date:"d/m/Y H:i" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p>No has vendido ninguna plantilla aún.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

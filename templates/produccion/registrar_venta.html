@@ -1,0 +1,254 @@
+<!-- templates/produccion/registrar_venta.html -->
+{% extends 'produccion/base_produccion.html' %}
+
+{% block title %}Registrar Venta{% endblock %}
+{% block page_title %}Registrar Nueva Venta{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-10">
+    <div class="card shadow-sm">
+      <div class="card-header">
+        <h5 class="mb-0">Registrar Venta de Productos</h5>
+      </div>
+      <div class="card-body">
+        {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+        {% if venta_exitosa %}
+        <div class="alert alert-success">¡Venta registrada exitosamente!</div>
+        {% endif %}
+        <form method="post">
+          {% csrf_token %}
+          {{ formset.management_form }}
+          <div id="items-container">
+            {% for form in formset %}
+            <div class="item-form border p-3 mb-3 rounded">
+              {{ form.DELETE }}
+              <div class="row g-3 align-items-end">
+                <div class="col-md-5">
+                  <label class="form-label">{{ form.producto.label }}</label>
+                  {{ form.producto }}
+                  {% if form.producto.errors %}
+                  <div class="text-danger small">{{ form.producto.errors }}</div>
+                  {% endif %}
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">{{ form.cantidad.label }}</label>
+                  {{ form.cantidad }}
+                  {% if form.cantidad.errors %}
+                  <div class="text-danger small">{{ form.cantidad.errors }}</div>
+                  {% endif %}
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">Precio Unitario</label>
+                  <input type="text" class="form-control precio-unitario" readonly>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">Subtotal</label>
+                  <input type="text" class="form-control subtotal" readonly>
+                </div>
+                <div class="col-md-1 d-grid">
+                  <button type="button" class="btn btn-outline-danger remove-item"><i class="bi bi-trash"></i></button>
+                </div>
+              </div>
+              {% if form.non_field_errors %}
+              <div class="text-danger mt-2 small">{{ form.non_field_errors }}</div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <button type="button" class="btn btn-secondary" id="add-item">
+              <i class="bi bi-plus-circle me-1"></i> Agregar Producto
+            </button>
+            <div class="text-end">
+              <h4>Total: $<span id="total-amount">0.00</span></h4>
+            </div>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-circle me-1"></i> Registrar Venta
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="ventaModal" tabindex="-1" aria-labelledby="ventaModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="ventaModalLabel"><i class="bi bi-check-circle-fill text-success me-2"></i>Venta Registrada</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="venta-resumen"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-primary" id="btn-imprimir"><i class="bi bi-printer me-1"></i>Imprimir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const productosData = JSON.parse('{{ productos_json|escapejs }}');
+
+function updateItem(itemForm) {
+  const productoSelect = itemForm.querySelector('select[name$="-producto"]');
+  const precioInput = itemForm.querySelector('.precio-unitario');
+  const cantidadInput = itemForm.querySelector('.cantidad-input');
+  const subtotalInput = itemForm.querySelector('.subtotal');
+
+  const productoId = productoSelect && productoSelect.value ? String(productoSelect.value) : '';
+  const cantidad = parseFloat(cantidadInput && cantidadInput.value ? cantidadInput.value : '0') || 0;
+
+  if (productoId && productosData[productoId]) {
+    const precio = parseFloat(productosData[productoId].precio_venta) || 0;
+    precioInput.value = precio.toFixed(2);
+    subtotalInput.value = (precio * cantidad).toFixed(2);
+  } else {
+    precioInput.value = '';
+    subtotalInput.value = '';
+  }
+  updateTotal();
+}
+
+function updateTotal() {
+  let total = 0;
+  document.querySelectorAll('.subtotal').forEach((el) => {
+    total += parseFloat(el.value) || 0;
+  });
+  const totalSpan = document.getElementById('total-amount');
+  if (totalSpan) totalSpan.textContent = total.toFixed(2);
+}
+
+function addEventListeners(itemForm) {
+  const productoSelect = itemForm.querySelector('select[name$="-producto"]');
+  const cantidadInput = itemForm.querySelector('.cantidad-input');
+  if (productoSelect) {
+    productoSelect.addEventListener('change', () => updateItem(itemForm));
+  }
+  if (cantidadInput) {
+    cantidadInput.addEventListener('input', () => updateItem(itemForm));
+  }
+}
+
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('remove-item') || e.target.closest('.remove-item')) {
+    e.preventDefault();
+    const itemForm = e.target.closest('.item-form');
+    if (!itemForm) return;
+    const deleteInput = itemForm.querySelector('input[name$="-DELETE"]');
+    if (deleteInput) {
+      deleteInput.checked = true;
+      itemForm.style.display = 'none';
+    } else {
+      itemForm.remove();
+    }
+    updateTotal();
+  }
+});
+
+document.getElementById('add-item').addEventListener('click', () => {
+  const container = document.getElementById('items-container');
+  const totalFormsInput = document.querySelector('input[name$="-TOTAL_FORMS"]');
+  const newIndex = parseInt(totalFormsInput.value, 10);
+  const template = container.querySelector('.item-form:last-of-type');
+  if (!template) return;
+  const newForm = template.cloneNode(true);
+
+  newForm.querySelectorAll('input, select').forEach((el) => {
+    const name = el.getAttribute('name');
+    const id = el.getAttribute('id');
+    if (name) el.setAttribute('name', name.replace(/-\d+-/, `-${newIndex}-`));
+    if (id) el.setAttribute('id', id.replace(/-\d+-/, `-${newIndex}-`));
+    if (el.type === 'checkbox' || el.type === 'radio') {
+      el.checked = false;
+    } else {
+      el.value = '';
+    }
+  });
+  const qty = newForm.querySelector('.cantidad-input');
+  if (qty) qty.value = '1';
+  const precio = newForm.querySelector('.precio-unitario');
+  if (precio) precio.value = '';
+  const subtotal = newForm.querySelector('.subtotal');
+  if (subtotal) subtotal.value = '';
+
+  container.appendChild(newForm);
+  totalFormsInput.value = newIndex + 1;
+  addEventListeners(newForm);
+});
+
+// Initialize
+document.querySelectorAll('.item-form').forEach((item) => {
+  addEventListeners(item);
+  updateItem(item);
+});
+
+// Modal handled in a separate conditional script block below (outside this script) to avoid editor JS linter warnings for Django tags.
+
+function imprimirFactura(venta) {
+  const w = window.open('', '_blank');
+  let html = `
+  <html>
+    <head>
+      <title>Factura Venta #${venta.id}</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h2 { text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .total { font-weight: bold; font-size: 1.2em; }
+      </style>
+    </head>
+    <body>
+      <h2>Factura de Venta</h2>
+      <p><strong>ID Venta:</strong> ${venta.id}</p>
+      <p><strong>Fecha:</strong> ${venta.fecha}</p>
+      <table>
+        <thead>
+          <tr><th>Producto</th><th>Cantidad</th><th>Precio Unitario</th><th>Subtotal</th></tr>
+        </thead>
+        <tbody>
+  `;
+  venta.items.forEach((it) => {
+    html += `<tr><td>${it.producto}</td><td>${it.cantidad}</td><td>$${Number(it.precio_unitario).toFixed(2)}</td><td>$${Number(it.subtotal).toFixed(2)}</td></tr>`;
+  });
+  html += `
+        </tbody>
+      </table>
+      <p class="total">Total: $${Number(venta.total).toFixed(2)}</p>
+    </body>
+  </html>`;
+  w.document.write(html);
+  w.document.close();
+  w.print();
+}
+</script>
+
+{% if venta_exitosa %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const ventaData = JSON.parse('{{ venta_json|escapejs }}');
+  const resumenDiv = document.getElementById('venta-resumen');
+  let html = '<table class="table table-sm"><thead><tr><th>Producto</th><th>Cantidad</th><th>Precio Unit.</th><th>Subtotal</th></tr></thead><tbody>';
+  ventaData.items.forEach((it) => {
+    html += `<tr><td>${it.producto}</td><td>${it.cantidad}</td><td>$${Number(it.precio_unitario).toFixed(2)}</td><td>$${Number(it.subtotal).toFixed(2)}</td></tr>`;
+  });
+  html += `</tbody></table><h5>Total: $${Number(ventaData.total).toFixed(2)}</h5>`;
+  resumenDiv.innerHTML = html;
+  const modal = new bootstrap.Modal(document.getElementById('ventaModal'));
+  modal.show();
+  const btn = document.getElementById('btn-imprimir');
+  if (btn) btn.addEventListener('click', () => imprimirFactura(ventaData));
+});
+</script>
+{% endif %}
+
+{% endblock %}

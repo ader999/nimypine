@@ -1,0 +1,255 @@
+<!-- produccion/templates/produccion/base_produccion.html -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Título dinámico -->
+    <title>{% block title %}Panel{% endblock %} - MiPyme Producción</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+
+    <!-- Estilos personalizados -->
+    <style>
+        body {
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .sidebar {
+            width: 280px;
+            min-height: 100vh;
+            background-color: #343a40; /* Color oscuro para la barra lateral */
+            padding-top: 1rem;
+        }
+        .sidebar .nav-link {
+            color: #adb5bd;
+            font-size: 1.1rem;
+            margin: 5px 0;
+        }
+        .sidebar .nav-link:hover {
+            color: #ffffff;
+            background-color: #495057;
+        }
+        .sidebar .nav-link .bi {
+            margin-right: 10px;
+        }
+        .content {
+            flex-grow: 1;
+            padding: 2rem;
+            background-color: #f8f9fa; /* Un fondo claro para el contenido */
+        }
+        .header-info {
+            background-color: #ffffff;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 2rem;
+        }
+        @media (max-width: 900px) {
+            body {
+                display: block;
+            }
+            .sidebar {
+                position: fixed;
+                left: -100%;
+                top: 0;
+                width: 100%;
+                height: 100vh;
+                z-index: 1000;
+                transition: left 0.3s;
+                overflow-y: auto;
+            }
+            .sidebar.show {
+                left: 0;
+            }
+            .content {
+                margin-left: 0;
+            }
+            body.no-scroll, html.no-scroll {
+                overflow: hidden;
+            }
+            .header-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            .header-info h1 {
+                font-size: 1rem;
+            }
+            .header-info span {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Menú Lateral Izquierdo (Sidebar) -->
+    <div class="sidebar d-flex flex-column flex-shrink-0 p-3 text-white bg-dark">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <a href="{% url 'produccion:panel' %}" class="d-flex align-items-center text-white text-decoration-none">
+               <!--  <i class="bi bi-box-seam fs-4 me-2"></i>
+                 <span class="fs-4">Producción</span> -->
+                 <span class="fs-4">{{ nombrepine }}</span>
+            </a>
+            <button class="btn btn-outline-light d-lg-none" id="sidebar-close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <hr>
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li class="nav-item">
+                <a href="{% url 'produccion:panel' %}" class="nav-link active" aria-current="page">
+                    <i class="bi bi-house-door-fill"></i>
+                    Panel Principal
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'produccion:lista_productos' %}" class="nav-link text-white">
+                    <i class="bi bi-list-task"></i>
+                     Listado de Productos
+                </a>
+
+            </li>
+            <li>
+                <a href="{% url 'produccion:crear_producto' %}" class="nav-link text-white">
+                    <i class="bi bi-plus-circle-fill"></i>
+                    Crear Nuevo Producto
+                </a>
+            </li>
+             <li>
+                <a href="{% url 'produccion:lista_insumos' %}"  class="nav-link text-white">
+                    <i class="bi bi-archive-fill"></i>
+                    Gestión de Insumos
+                </a>
+            </li>
+
+            <li>
+                <a href="{% url 'produccion:lista_procesos' %}"  class="nav-link text-white">
+                    <i class="bi bi-gear-wide-connected"></i>
+                    Gestión de Procesos
+                </a>
+            </li>
+
+            <!-- --- VENTAS / FACTURACIÓN --- -->
+            <li>
+                <a href="{% url 'produccion:registrar_venta' %}" class="nav-link text-white">
+                    <i class="bi bi-cash-coin"></i>
+                    Registrar Venta
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'produccion:historial_ventas' %}" class="nav-link text-white">
+                    <i class="bi bi-receipt"></i>
+                    Historial de Ventas
+                </a>
+            </li>
+
+            <li>
+                <a href="{% url 'cuentas:lista_equipo' %}" class="nav-link text-white">
+                    <i class="bi bi-people-fill"></i>
+                    Gestión de Equipo
+                </a>
+            </li>
+
+            <li>
+                <a href="{% url 'asistente:asistente' %}" class="nav-link text-white">
+                    <i class="bi bi-robot"></i>
+                    Asistente Miguel
+                </a>
+            </li>
+        </ul>
+        <hr>
+        <!-- Información del Usuario abajo -->
+        <div class="dropdown">
+            <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle fs-4 me-2"></i>
+                <strong>{{ request.user.username }}</strong>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
+                <li><a class="dropdown-item" href="{% url 'produccion:configuracion' %}">Configuración</a></li>
+                <!--<li><a class="dropdown-item" href="#">Perfil</a></li>-->
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <form id="logout-form" method="post" action="{% url 'cuentas:logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item">Cerrar Sesión</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Contenido Principal -->
+    <div class="content">
+        <!-- Encabezado con información -->
+        <div class="header-info d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <button class="btn btn-outline-secondary d-lg-none me-2" id="sidebar-toggle">
+                    <i class="bi bi-list"></i>
+                </button>
+                <h1 class="h3">{% block page_title %}Título de la Página{% endblock %}</h1>
+            </div>
+            <div class="d-flex align-items-center">
+                {% block extra_buttons %}{% endblock %}
+                <span class="ms-3">Bienvenido, <strong>{{ request.user.username }}</strong></span>
+            </div>
+        </div>
+
+        <!-- Mensajes de Django -->
+        {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+            <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'warning' %}alert-warning{% elif message.tags == 'info' %}alert-info{% else %}alert-secondary{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Bloque de contenido que será reemplazado por las plantillas hijas -->
+        {% block content %}
+        <!-- El contenido específico de cada página irá aquí. -->
+        {% endblock %}
+
+        <!-- Pie de página dentro del área de contenido
+
+         <footer class="mt-5 text-center text-muted">
+             <hr>
+            <p>&copy; 2025 Tu MiPyme</p>
+        </footer>
+        </footer>
+
+         -->
+
+    </div>
+
+    <!-- Bootstrap JS (Bundle) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+    <!-- JavaScript personalizado -->
+    <script>
+        $(document).ready(function() {
+            $('#sidebar-toggle').click(function() {
+                $('.sidebar').toggleClass('show');
+                $('body, html').toggleClass('no-scroll');
+            });
+            $('#sidebar-close').click(function() {
+                $('.sidebar').removeClass('show');
+                $('body, html').removeClass('no-scroll');
+            });
+            $('.sidebar').on('wheel touchmove', function(e) {
+                e.stopPropagation();
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Elige tu tipo de cuenta{% endblock %}
+{% block content %}
+<div class="container text-center">
+    <h1 class="mb-4">¿Cómo quieres empezar?</h1>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Soy Creador de Contenido</h5>
+                    <p class="card-text">Quiero registrarme para subir y compartir plantillas de Excel en el marketplace.</p>
+                    <a href="{% url 'cuentas:registro_creador' %}" class="btn btn-primary">Registrarme como Creador</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Tengo una Empresa</h5>
+                    <p class="card-text">Quiero registrar mi Mipyme y gestionar mi negocio con las herramientas de la plataforma.</p>
+                    <a href="{% url 'cuentas:registro_mipyme' %}" class="btn btn-secondary">Registrar mi Mipyme</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Bienvenido a MiPyme Pro{% endblock %}
+
+{% block content %}
+
+<!-- Sección "Hero" de Bienvenida -->
+<div class="p-5 mb-4 bg-light rounded-3">
+    <div class="container-fluid py-5">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="display-5 fw-bold">Potencia tu Mipyme con Herramientas Integrales</h1>
+                <p class="fs-4">
+                    Gestiona tu producción completa, accede a plantillas Excel profesionales y administra usuarios de forma centralizada y segura. Todo en una sola plataforma diseñada para pequeñas y medianas empresas.
+                </p>
+                <a href="{% url 'cuentas:seleccion_registro' %}" class="btn btn-primary btn-lg me-3">Regístrate Ahora</a>
+                <a href="{% url 'marketplace_listado' %}" class="btn btn-outline-secondary btn-lg">Explorar Plantillas</a>
+            </div>
+            <div class="col-md-6 text-center">
+                <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=400&fit=crop" alt="Mipyme trabajando" class="img-fluid rounded shadow" style="max-width: 100%; height: auto;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sección de Características Principales -->
+<div class="row text-center mt-5">
+    <div class="col-md-3">
+        <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=200&h=150&fit=crop" alt="Plantillas Excel" class="img-fluid rounded mb-3" style="width: 150px; height: 100px; object-fit: cover;">
+        <i class="bi bi-file-earmark-excel-fill" style="font-size: 2rem; color: #198754;"></i>
+        <h3 class="fw-normal">Marketplace de Plantillas</h3>
+        <p>Adquiere plantillas Excel profesionales para contabilidad, inventario, gestión de proyectos y más, con pagos seguros vía PayPal.</p>
+    </div>
+    <div class="col-md-3">
+        <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=200&h=150&fit=crop" alt="Gestión de Usuarios" class="img-fluid rounded mb-3" style="width: 150px; height: 100px; object-fit: cover;">
+        <i class="bi bi-people-fill" style="font-size: 2rem; color: #0d6efd;"></i>
+        <h3 class="fw-normal">Gestión de Usuarios</h3>
+        <p>Administra roles y permisos de tu equipo: lectores, editores, administradores, con control total sobre accesos.</p>
+    </div>
+    <div class="col-md-3">
+        <img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=200&h=150&fit=crop" alt="Gestión de Producción" class="img-fluid rounded mb-3" style="width: 150px; height: 100px; object-fit: cover;">
+        <i class="bi bi-gear-fill" style="font-size: 2rem; color: #fd7e14;"></i>
+        <h3 class="fw-normal">Gestión de Producción</h3>
+        <p>Calcula costos automáticamente, gestiona insumos, procesos y productos, registra ventas y optimiza tu rentabilidad.</p>
+    </div>
+    <div class="col-md-3">
+        <img src="https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=200&h=150&fit=crop" alt="Seguridad de Datos" class="img-fluid rounded mb-3" style="width: 150px; height: 100px; object-fit: cover;">
+        <i class="bi bi-shield-lock-fill" style="font-size: 2rem; color: #6c757d;"></i>
+        <h3 class="fw-normal">Seguridad de Datos</h3>
+        <p>Datos completamente aislados por empresa. Cada Mipyme accede solo a su información, con encriptación y respaldo seguro.</p>
+    </div>
+</div>
+
+{% endblock %}

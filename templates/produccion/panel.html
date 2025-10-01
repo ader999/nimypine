@@ -1,0 +1,75 @@
+<!-- produccion/templates/produccion/panel.html -->
+
+<!-- Heredamos toda la estructura de la plantilla base -->
+{% extends 'produccion/base_produccion.html' %}
+
+<!-- Definimos el contenido para los bloques de la plantilla base -->
+
+{% block title %}Panel Principal{% endblock %}
+
+{% block page_title %}Funcionalidades Principales{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Gráfica de Rentabilidad -->
+    <div class="col-12">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-graph-up me-2"></i>Rentabilidad del Negocio</h5>
+                <p class="card-text">Gráfica que muestra la rentabilidad mensual basada en ventas menos costos de salarios. Línea azul: rentabilidad. Línea roja punteada: umbral de pérdidas (si baja, pérdidas). Línea verde punteada: umbral de ganancias (si sube, ganancias). Áreas coloreadas indican zonas críticas.</p>
+                {% if grafica_rentabilidad %}
+                    <img src="data:image/png;base64,{{ grafica_rentabilidad }}" alt="Gráfica de Rentabilidad" class="img-fluid">
+                {% else %}
+                    <p>No hay datos suficientes para generar la gráfica.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Tarjeta para Gestión de Productos -->
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-box-seam-fill me-2"></i>Gestión de Productos</h5>
+                <p class="card-text">Administra los productos terminados que tu negocio ofrece. Consulta tu inventario, define precios y gestiona sus formulaciones.</p>
+                <a href="{% url 'produccion:lista_productos' %}" class="btn btn-primary">
+                    <i class="bi bi-list-task me-1"></i> Ver listado de Productos
+                </a>
+                <a href="{% url 'produccion:crear_producto' %}" class="btn btn-success">
+                    <i class="bi bi-plus-circle me-1"></i> Crear Nuevo Producto
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta para Formulaciones y Recetas -->
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-journal-bookmark-fill me-2"></i>Formulaciones y Recetas</h5>
+                <p class="card-text">Define los insumos y las cantidades necesarias para fabricar cada producto. La gestión se realiza desde el detalle de cada producto.</p>
+                <a href="#" class="btn btn-outline-secondary">
+                    <i class="bi bi-info-circle me-1"></i> Aprender más
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-info mt-4" role="alert">
+    <h4 class="alert-heading">¡Bienvenido al panel de producción!</h4>
+    <p>Desde aquí podrás controlar todos los aspectos relacionados con la fabricación de tus productos. Utiliza el menú de la izquierda para navegar entre las diferentes secciones.</p>
+    <hr>
+    <p class="mb-0">Si tienes alguna duda, consulta la sección de ayuda.</p>
+</div>
+
+<div class="alert alert-primary mt-4" role="alert">
+    <h4 class="alert-heading">¿Necesitas ayuda?</h4>
+    <p>Si necesitas información sobre tu mypine o asistencia con cualquier consulta, consulta al asistente virtual.</p>
+    <a href="{% url 'asistente:asistente' %}" class="btn btn-primary">
+        <i class="bi bi-chat-dots me-1"></i> Conversar
+    </a>
+</div>
+{% endblock %}

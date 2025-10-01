@@ -1,0 +1,85 @@
+<!-- produccion/templates/produccion/crear_producto.html -->
+{% extends 'produccion/base_produccion.html' %}
+
+<!-- Títulos dinámicos -->
+{% block title %}{% if producto %}Editar Producto{% else %}Crear Nuevo Producto{% endif %}{% endblock %}
+
+{% block page_title %}{% if producto %}Editar Producto: {{ producto.nombre }}{% else %}Añadir Nuevo Producto{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title">
+            {% if producto %}Actualiza los datos del producto{% else %}Completa los datos del producto{% endif %}
+        </h5>
+        <hr>
+
+        <form method="post" novalidate id="product-form">
+            {% csrf_token %}
+
+            <!-- Campos principales -->
+            {% for field in form %}
+                {% if field.name != 'peso' and field.name != 'tamano_largo' and field.name != 'tamano_ancho' and field.name != 'tamano_alto' and field.name != 'presentacion' %}
+            <div class="mb-3">
+                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+                {% endif %}
+            {% endfor %}
+
+            <!-- Acordeón para datos opcionales -->
+            <div class="accordion mt-4" id="accordionOpcionales">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingOpcionales">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOpcionales" aria-expanded="false" aria-controls="collapseOpcionales">
+                            Datos Opcionales del Producto
+                        </button>
+                    </h2>
+                    <div id="collapseOpcionales" class="accordion-collapse collapse" aria-labelledby="headingOpcionales" data-bs-parent="#accordionOpcionales">
+                        <div class="accordion-body">
+                            {% for field in form %}
+                                {% if field.name == 'peso' or field.name == 'tamano_largo' or field.name == 'tamano_ancho' or field.name == 'tamano_alto' or field.name == 'presentacion' %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                            </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if usar_porcentaje_predeterminado %}
+            <div class="alert alert-info" role="alert">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <strong>Porcentaje de ganancia automático:</strong> Se aplicará el porcentaje configurado del {{ porcentaje_predeterminado }}% a este producto.
+            </div>
+            {% endif %}
+
+            <div class="mt-4">
+                <a href="{% url 'produccion:lista_productos' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                </a>
+                <!-- Botón dinámico -->
+                <button type="submit" id="submit-btn" class="btn btn-success">
+                    <i class="bi bi-check-circle-fill me-1"></i>
+                    {% if producto %}Guardar Cambios{% else %}Guardar Producto{% endif %}
+                </button>
+            </div>
+        </form>
+
+        <script>
+        document.getElementById('product-form').addEventListener('submit', function() {
+            var btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Guardando...';
+        });
+        </script>
+    </div>
+</div>
+{% endblock %}

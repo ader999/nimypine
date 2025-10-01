@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load static %} <!-- Carga los archivos estáticos si los necesitas -->
+
+{% block title %}{{ plantilla.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <!-- Columna de la Imagen de Vista Previa -->
+        <div class="col-lg-6 mb-4 mb-lg-0">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    {% if plantilla.imagen_vista_previa %}
+                        <img src="{{ plantilla.imagen_vista_previa.url }}" class="img-fluid rounded shadow" alt="Vista previa de {{ plantilla.nombre }}">
+                    {% else %}
+                        <!-- Placeholder si no hay imagen -->
+                        <div class="d-flex align-items-center justify-content-center bg-light rounded" style="height: 350px;">
+                            <span class="text-muted">Sin vista previa disponible</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna de Información y Descarga -->
+        <div class="col-lg-6">
+            <!-- Título de la Plantilla -->
+            <h1 class="display-5">{{ plantilla.nombre }}</h1>
+
+            <!-- Información del Creador -->
+            {% if plantilla.creador %}
+            <p class="lead text-muted">
+                Creado por: {{ plantilla.creador.get_full_name|default:plantilla.creador.username }}
+            </p>
+            {% endif %}
+
+            <hr>
+
+            <!-- Precio -->
+            {% if plantilla.precio and plantilla.precio > 0 %}
+            <h4 class="mt-4 text-success">Precio: ${{ plantilla.precio }}</h4>
+            {% else %}
+            <h4 class="mt-4 text-success">Gratuito</h4>
+            {% endif %}
+
+            <!-- Descripción -->
+            <h4 class="mt-4">Descripción</h4>
+            <p>{{ plantilla.descripcion|linebreaks }}</p>
+
+            <!-- Metadatos -->
+            <div class="d-flex justify-content-between text-muted mt-4">
+                <small>Publicado: {{ plantilla.fecha_creacion|date:"d F, Y" }}</small>
+                <small>Última actualización: {{ plantilla.fecha_actualizacion|timesince }} atrás</small>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="d-grid gap-2 mt-5">
+                {% if plantilla.archivo_plantilla %}
+                    {% if user.is_authenticated %}
+                        {% if plantilla.precio and plantilla.precio > 0 %}
+                            {% if ha_comprado %}
+                                <a href="{% url 'marketplace_descargar' plantilla.id %}" class="btn btn-success btn-lg">
+                                    <i class="bi bi-download me-2"></i>Descargar Plantilla (Ya Pagada)
+                                </a>
+                            {% else %}
+                                <a href="{% url 'marketplace_descargar' plantilla.id %}" class="btn btn-success btn-lg">
+                                    <i class="bi bi-download me-2"></i>Comprar y Descargar Plantilla
+                                </a>
+                            {% endif %}
+                        {% else %}
+                            <a href="{% url 'marketplace_descargar' plantilla.id %}" class="btn btn-success btn-lg">
+                                <i class="bi bi-download me-2"></i>Descargar Plantilla
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-success btn-lg">
+                            <i class="bi bi-download me-2"></i>Iniciar Sesión para Descargar
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <button class="btn btn-secondary btn-lg" disabled>
+                        <i class="bi bi-x-circle-fill me-2"></i>Archivo no disponible
+                    </button>
+                {% endif %}
+
+                <a href="{% url 'marketplace_listado' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left-circle me-2"></i>Volver al Marketplace
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

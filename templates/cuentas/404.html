@@ -1,0 +1,38 @@
+<!-- cuentas/templates/cuentas/404.html -->
+{% extends 'produccion/base_produccion.html' %}
+
+{% block title %}Página no Encontrada{% endblock %}
+
+{% block page_title %}Página no Encontrada{% endblock %}
+
+{% block content %}
+<div class="container text-center">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-warning">
+                <div class="card-body p-5">
+
+                    <!-- Ícono de Búsqueda (SVG incrustado) -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" fill="currentColor" class="bi bi-search text-warning mb-4" viewBox="0 0 16 16">
+                      <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                    </svg>
+
+                    <h1 class="display-5">Página no Encontrada (Error 404)</h1>
+                    <p class="lead mt-3">
+                        Oops... Parece que te has perdido. La página que buscas no existe o ha sido movida.
+                    </p>
+                    <p class="text-muted">
+                        Verifica que la dirección URL sea correcta o utiliza el botón para volver al inicio.
+                    </p>
+
+                    <!-- Botón para regresar al dashboard o página principal -->
+                    <a href="{% url 'produccion:panel' %}" class="btn btn-primary mt-4">
+                        <i class="bi bi-house-door-fill me-1"></i> Ir a la página de inicio
+                    </a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

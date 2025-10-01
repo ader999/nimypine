@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Iniciar Sesión{% endblock %}
+
+{% block content %}
+<div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="row justify-content-center w-100">
+        <div class="col-sm-8 col-md-6 col-lg-4">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <svg width="80" height="80" xmlns="http://www.w3.org/2000/svg" class="mb-3">
+                            <!-- Gráfico de barras representando crecimiento en MIPYMES -->
+                            <rect x="15" y="30" width="12" height="32" fill="#4CAF50" stroke="#2E7D32" stroke-width="2"/>
+                            <rect x="32" y="15" width="12" height="47" fill="#4CAF50" stroke="#2E7D32" stroke-width="2"/>
+                            <rect x="49" y="22" width="12" height="40" fill="#4CAF50" stroke="#2E7D32" stroke-width="2"/>
+                        </svg>
+                        <h2 class="card-title text-dark fw-bold">Iniciar Sesión</h2>
+                        <p class="text-muted">Accede a tu cuenta MIPYMES</p>
+                    </div>
+                    <form method="post">
+                        {% csrf_token %}
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger" role="alert">
+                                {% for error in form.non_field_errors %}
+                                    <p class="mb-0">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="mb-3">
+                            <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">Usuario o Email</label>
+                            {{ form.username }}
+                            <div class="form-text">Puedes usar tu nombre de usuario o dirección de email para iniciar sesión.</div>
+                            {% if form.username.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.username.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-4">
+                            <label for="{{ form.password.id_for_label }}" class="form-label fw-semibold">Contraseña</label>
+                            {{ form.password }}
+                            {% if form.password.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.password.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" id="login-btn" class="btn btn-primary btn-lg fw-bold">
+                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                Entrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.querySelector('form').addEventListener('submit', function() {
+    const btn = document.getElementById('login-btn');
+    const spinner = btn.querySelector('.spinner-border');
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...';
+});
+</script>
+{% endblock %}

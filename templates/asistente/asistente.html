@@ -1,0 +1,285 @@
+{% extends "produccion/base_produccion.html" %}
+{% load static %}
+
+{% block title %}Asistente Miguel{% endblock %}
+
+{% block page_title %}Asistente Virtual Miguel{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Historial de conversaciones -->
+        <div class="col-md-3">
+            <div class="conversation-history">
+                <h5>Historial de Conversaciones</h5>
+                <div class="new-conversation mb-2">
+                    <a href="{% url 'asistente:asistente' %}" class="btn btn-primary btn-sm">Nueva Conversación</a>
+                </div>
+                <div class="conversation-list">
+                    {% for conv in conversaciones %}
+                    <div class="conversation-item {% if conv.id == conversacion_actual.id %}active{% endif %}">
+                        <a href="{% url 'asistente:asistente_conversacion' conv.id %}">
+                            <div class="conversation-title">{{ conv.titulo }}</div>
+                            <div class="conversation-date">{{ conv.fecha_inicio|date:"d/m/Y H:i" }}</div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+            </div>
+        </div>
+
+        <!-- Chat principal -->
+        <div class="col-md-9">
+            <div class="d-flex justify-content-center">
+                <div class="card-container">
+                    <div class="card-header">
+                        <img src="https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcTKT9Q-Pn9A3MMugM4BPZxEeoDglk5VmuhmXApJmhwm_Rz5-mhi" alt="Avatar Miguel" class="img-avatar">
+                        <div class="text-chat">Miguel - Asistente Virtual</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="messages-container" id="chat-container">
+                            {% if not mensajes %}
+                            <div class="welcome-message">
+                                <p>¡Hola! Soy Miguel, asistente virtual de {{ nombrepine }}. ¿En qué puedo ayudarte hoy?</p>
+                            </div>
+                            {% endif %}
+                            {% for mensaje in mensajes_procesados %}
+                            <div class="message-box {% if mensaje.es_usuario %}right{% else %}left{% endif %}">
+                                {% if mensaje.es_usuario %}
+                                    <p>{{ mensaje.contenido|linebreaks }}</p>
+                                {% else %}
+                                    <div>{{ mensaje.contenido|safe }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="message-input">
+                            <form id="chat-form" method="post">
+                                {% csrf_token %}
+                                <div class="mb-2">
+                                    <select name="modelo" id="modelo-select" class="form-select form-select-sm">
+                                        <option value="openai">OpenAI</option>
+                                        <option value="gemini">Gemini</option>
+                                        <option value="deepseek">DeepSeek</option>
+                                    </select>
+                                </div>
+                                <textarea name="mensaje" id="mensaje-input" placeholder="Escribe tu mensaje aquí..." class="message-send" required></textarea>
+                                <button type="submit" class="button-send">Enviar</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* From Uiverse.io by ahmed150up */
+.card-container {
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 15px;
+  margin: 20px;
+  display: flex;
+  flex-direction: column;
+  max-width: 950px;
+  width: 100%;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ccc;
+}
+
+.card-header .img-avatar {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  margin-right: 20px;
+}
+
+.card-header .text-chat {
+  color: black;
+  margin: 0;
+  font-size: 20px;
+}
+
+.card-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.messages-container {
+  padding: 15px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.message-box {
+  padding: 10px;
+  margin-bottom: 5px;
+  border-radius: 10px;
+}
+
+.message-box.left {
+  background-color: #f1f1f1;
+  color: black;
+  font-size: 13px;
+  left: 0;
+}
+
+.message-box.right {
+  background-color: #333;
+  color: #fff;
+  font-size: 13px;
+  right: 0;
+}
+
+.message-input {
+  padding: 5px;
+  border-top: 1px solid #ccc;
+}
+
+.message-input .message-send {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  resize: none;
+}
+
+.message-input .button-send {
+  background-color: #333;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  margin-left: 10px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.message-input .button-send:hover {
+  background-color: #f1f1f1;
+  color: #333;
+}
+
+/* Estilos para el historial de conversaciones */
+.conversation-history {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-right: 1px solid #ccc;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.conversation-history h5 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.conversation-list {
+  margin-bottom: 20px;
+}
+
+.conversation-item {
+  margin-bottom: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.conversation-item a {
+  display: block;
+  padding: 10px;
+  text-decoration: none;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.conversation-item a:hover {
+  background-color: #e9ecef;
+}
+
+.conversation-item.active a {
+  background-color: #007bff;
+  color: white;
+}
+
+.conversation-title {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.conversation-date {
+  font-size: 12px;
+  color: #666;
+}
+
+.new-conversation {
+  margin-top: 20px;
+}
+
+.welcome-message {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-style: italic;
+}
+
+/* Media query para dispositivos móviles con ancho <= 900px */
+@media (max-width: 900px) {
+  .row > .col-md-3 {
+    order: 2;
+  }
+  .row > .col-md-9 {
+    order: 1;
+  }
+}
+</style>
+
+<script>
+document.getElementById('chat-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const button = document.querySelector('.button-send');
+    button.disabled = true;
+    button.textContent = 'Enviando...';
+    const formData = new FormData(this);
+    fetch('', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const chatContainer = document.getElementById('chat-container');
+        const userMessage = document.createElement('div');
+        userMessage.className = 'message-box right';
+        userMessage.innerHTML = '<p>' + formData.get('mensaje') + '</p>';
+        chatContainer.appendChild(userMessage);
+
+        const assistantMessage = document.createElement('div');
+        assistantMessage.className = 'message-box left';
+        assistantMessage.innerHTML = data.respuesta;
+        chatContainer.appendChild(assistantMessage);
+
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        document.getElementById('mensaje-input').value = '';
+        button.disabled = false;
+        button.textContent = 'Enviar';
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        button.disabled = false;
+        button.textContent = 'Enviar';
+    });
+});
+</script>
+{% endblock %}

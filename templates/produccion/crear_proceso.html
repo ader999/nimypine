@@ -1,0 +1,43 @@
+{% extends "produccion/base_produccion.html" %}
+
+{% block title %}{% if proceso %}Editar Proceso{% else %}Crear Nuevo Proceso{% endif %}{% endblock %}
+
+{% block page_title %}{% if proceso %}Editar Proceso: {{ proceso.nombre }}{% else %}Crear Nuevo Proceso{% endif %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" id="proceso-form">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.nombre.id_for_label }}" class="form-label">{{ form.nombre.label }}</label>
+                        {{ form.nombre }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.costo_por_hora.id_for_label }}" class="form-label">{{ form.costo_por_hora.label }}</label>
+                        {{ form.costo_por_hora }}
+                    </div>
+
+                    <div class="d-flex justify-content-end">
+                         <a href="{% url 'produccion:lista_procesos' %}" class="btn btn-secondary me-2">Cancelar</a>
+                        <button type="submit" class="btn btn-primary" id="submit-btn">
+                           <i class="bi bi-check-circle-fill me-2"></i> {% if proceso %}Actualizar Proceso{% else %}Guardar Proceso{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+<script>
+document.getElementById('proceso-form').addEventListener('submit', function() {
+    var btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Guardando...';
+});
+</script>
+</div>
+{% endblock %}

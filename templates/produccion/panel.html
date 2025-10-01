@@ -16,11 +16,133 @@
         <div class="card shadow-sm mb-4">
             <div class="card-body">
                 <h5 class="card-title"><i class="bi bi-graph-up me-2"></i>Rentabilidad del Negocio</h5>
-                <p class="card-text">Gráfica que muestra la rentabilidad mensual basada en ventas menos costos de salarios. Línea azul: rentabilidad. Línea roja punteada: umbral de pérdidas (si baja, pérdidas). Línea verde punteada: umbral de ganancias (si sube, ganancias). Áreas coloreadas indican zonas críticas.</p>
-                {% if grafica_rentabilidad %}
-                    <img src="data:image/png;base64,{{ grafica_rentabilidad }}" alt="Gráfica de Rentabilidad" class="img-fluid">
+                <p class="card-text">Análisis de rentabilidad mensual basada en ventas menos costos de salarios.</p>
+                
+                {% if error_grafica %}
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>{{ error_grafica }}
+                    </div>
+                {% endif %}
+                
+                {% if tiene_datos %}
+                    <div class="mb-4" style="position: relative; height: 300px;">
+                        <canvas id="rentabilidadChart"></canvas>
+                    </div>
+                    
+                    <div class="table-responsive d-none" id="tablaRentabilidad">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Mes</th>
+                                    <th>Rentabilidad</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dato in datos_tabla %}
+                                <tr>
+                                    <td>{{ dato.mes }}</td>
+                                    <td>
+                                        {% if dato.rentabilidad >= 0 %}
+                                            <span class="text-success">+${{ dato.rentabilidad|floatformat:2 }}</span>
+                                        {% else %}
+                                            <span class="text-danger">${{ dato.rentabilidad|floatformat:2 }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if dato.estado == 'ganancia' %}
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-arrow-up-circle me-1"></i>Ganancia
+                                            </span>
+                                        {% elif dato.estado == 'perdida' %}
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-arrow-down-circle me-1"></i>Pérdida
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning">
+                                                <i class="bi bi-dash-circle me-1"></i>Neutral
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="alert alert-info mb-0">
+                            <strong>Umbrales:</strong>
+                            <span class="ms-2"><i class="bi bi-arrow-down text-danger"></i> Pérdidas: menos de ${{ umbral_perdidas|floatformat:0 }}</span>
+                            <span class="ms-3"><i class="bi bi-arrow-up text-success"></i> Ganancias: más de ${{ umbral_ganancias|floatformat:0 }}</span>
+                        </div>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="toggleView()">
+                            <i class="bi bi-arrow-repeat me-1"></i> Cambiar vista
+                        </button>
+                    </div>
+                    
+                    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                    <script>
+                    const ctx = document.getElementById('rentabilidadChart').getContext('2d');
+                    const chartData = JSON.parse('{{ chart_data|escapejs }}');
+                    
+                    // Configuración de la gráfica
+                    const chart = new Chart(ctx, {
+                        type: 'line',
+                        data: chartData,
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return context.dataset.label + ': $' + context.parsed.y.toFixed(2);
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Rentabilidad ($)'
+                                    },
+                                    grid: {
+                                        color: 'rgba(0, 0, 0, 0.05)',
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        display: false
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Función para alternar entre gráfica y tabla
+                    function toggleView() {
+                        const chartElement = document.getElementById('rentabilidadChart').closest('div');
+                        const tableElement = document.getElementById('tablaRentabilidad');
+                        
+                        if (chartElement.style.display === 'none') {
+                            chartElement.style.display = 'block';
+                            tableElement.classList.add('d-none');
+                        } else {
+                            chartElement.style.display = 'none';
+                            tableElement.classList.remove('d-none');
+                        }
+                    }
+                    </script>
                 {% else %}
-                    <p>No hay datos suficientes para generar la gráfica.</p>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>No hay datos de ventas disponibles para mostrar la rentabilidad.
+                    </div>
                 {% endif %}
             </div>
         </div>

@@ -2,10 +2,8 @@
 
 import decimal
 import json
-import matplotlib.pyplot as plt
 import io
 import base64
-import numpy as np
 from datetime import datetime, timedelta
 from django.db.models import Sum
 from openpyxl import Workbook
@@ -65,35 +63,92 @@ def panel_produccion(request):
         meses = ['Sin datos']
         rentabilidades = [0]
 
-    # Generar gráfica
-    rentabilidades_array = np.array(rentabilidades)
-    plt.figure(figsize=(10, 5))
-    plt.plot(meses, rentabilidades, marker='o', color='blue', linewidth=2, label='Rentabilidad')
-    plt.axhline(y=umbral_perdidas, color='red', linestyle='--', linewidth=2, label=f'Umbral Pérdidas ({umbral_perdidas:.0f})')
-    plt.axhline(y=umbral_ganancias, color='green', linestyle='--', linewidth=2, label=f'Umbral Ganancias ({umbral_ganancias:.0f})')
-    plt.fill_between(meses, umbral_perdidas, rentabilidades_array, where=(rentabilidades_array < umbral_perdidas), color='red', alpha=0.3)
-    plt.fill_between(meses, umbral_ganancias, rentabilidades_array, where=(rentabilidades_array > umbral_ganancias), color='green', alpha=0.3)
-    plt.title('Rentabilidad del Negocio - Últimos 12 Meses')
-    plt.xlabel('Mes')
-    plt.ylabel('Rentabilidad ($)')
-    plt.xticks(rotation=45)
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
+    # Preparar datos para tabla alternativa
+    datos_tabla = []
+    for i, mes in enumerate(meses):
+        datos_tabla.append({
+            'mes': mes,
+            'rentabilidad': rentabilidades[i] if i < len(rentabilidades) else 0,
+            'estado': 'ganancia' if rentabilidades[i] > umbral_ganancias else ('perdida' if rentabilidades[i] < umbral_perdidas else 'neutral')
+        })
+    
+    # Intentar generar gráfica con matplotlib
+    grafica_generada = False
+    error_grafica = None
+    
+    try:
+        import matplotlib
+        matplotlib.use('Agg')  # Usar backend no interactivo
+        import matplotlib.pyplot as plt
+        import numpy as np
 
-    # Convertir a base64
-    buf = io.BytesIO()
-    plt.savefig(buf, format='png')
-    buf.seek(0)
-    image_base64 = base64.b64encode(buf.read()).decode('utf-8')
-    buf.close()
-    plt.close()
+        # Generar gráfica
+        rentabilidades_array = np.array(rentabilidades)
+        plt.figure(figsize=(10, 5))
+        plt.plot(meses, rentabilidades, marker='o', color='blue', linewidth=2, label='Rentabilidad')
+        plt.axhline(y=umbral_perdidas, color='red', linestyle='--', linewidth=2, label=f'Umbral Pérdidas (${umbral_perdidas:.0f})')
+        plt.axhline(y=umbral_ganancias, color='green', linestyle='--', linewidth=2, label=f'Umbral Ganancias (${umbral_ganancias:.0f})')
+        plt.fill_between(meses, umbral_perdidas, rentabilidades_array, where=(rentabilidades_array < umbral_perdidas), color='red', alpha=0.3)
+        plt.fill_between(meses, umbral_ganancias, rentabilidades_array, where=(rentabilidades_array > umbral_ganancias), color='green', alpha=0.3)
+        plt.title('Rentabilidad del Negocio - Últimos 12 Meses')
+        plt.xlabel('Mes')
+        plt.ylabel('Rentabilidad ($)')
+        plt.xticks(rotation=45)
+        plt.grid(True)
+        plt.legend()
+        plt.tight_layout()
 
+        # Convertir a base64
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        buf.seek(0)
+        image_base64 = base64.b64encode(buf.read()).decode('utf-8')
+        buf.close()
+        plt.close()
+        
+        grafica_generada = True
+        grafica_rentabilidad = image_base64
+        
+    except ImportError as e:
+        # Si matplotlib no está disponible o hay problemas con librerías del sistema
+        error_msg = str(e)
+        if 'libstdc++' in error_msg:
+            error_grafica = "No se puede generar la gráfica debido a librerías del sistema faltantes (libstdc++). Se muestra tabla de datos como alternativa."
+        else:
+            error_grafica = f"No se pudo cargar matplotlib: {error_msg}"
+        grafica_rentabilidad = None
+        
+    except Exception as e:
+        # Capturar cualquier otro error durante la generación de la gráfica
+        error_grafica = f"Error al generar la gráfica: {str(e)}"
+        grafica_rentabilidad = None
+    
+    # Preparar datos para Chart.js
+    chart_data = {
+        'labels': meses,
+        'datasets': [{
+            'label': 'Rentabilidad ($)',
+            'data': rentabilidades,
+            'borderColor': 'rgba(75, 192, 192, 1)',
+            'backgroundColor': 'rgba(75, 192, 192, 0.2)',
+            'borderWidth': 2,
+            'pointBackgroundColor': 'rgba(75, 192, 192, 1)',
+            'pointRadius': 4,
+            'tension': 0.1
+        }]
+    }
+
+    # Construir contexto
     contexto = {
         'titulo': 'Panel de Producción',
         'usuario': request.user,
         'nombrepine': mipyme.nombre,
-        'grafica_rentabilidad': image_base64
+        'chart_data': json.dumps(chart_data),
+        'error_grafica': error_grafica,
+        'datos_tabla': datos_tabla,
+        'umbral_perdidas': umbral_perdidas,
+        'umbral_ganancias': umbral_ganancias,
+        'tiene_datos': len(datos_tabla) > 0 and datos_tabla[0]['mes'] != 'Sin datos'
     }
 
     return render(request, 'produccion/panel.html', contexto)

@@ -20,9 +20,29 @@ from .funciones import generar_username_unico
 logger = logging.getLogger(__name__)
 
 
+def _enviar_email_async(subject, html_message, recipient_list):
+    """
+    Función interna para enviar emails en un thread separado.
+    Usa fail_silently=True para evitar bloquear el worker en caso de timeout.
+    """
+    try:
+        send_mail(
+            subject=subject,
+            message='',
+            from_email=None,
+            recipient_list=recipient_list,
+            html_message=html_message,
+            fail_silently=True  # No lanzar excepciones que puedan bloquear el thread
+        )
+        logger.info(f"Email enviado exitosamente a {recipient_list}")
+    except Exception as e:
+        logger.error(f"Error al enviar email a {recipient_list}: {e}")
+
+
 def enviar_email_confirmacion(user):
     """
-    Envía el email de confirmación de forma síncrona.
+    Envía el email de confirmación de forma asíncrona usando threads daemon.
+    El código se guarda en la BD antes de intentar enviar el email.
     """
     codigo = ''.join(random.choices(string.digits, k=6))
     user.codigo_confirmacion = codigo
@@ -31,41 +51,31 @@ def enviar_email_confirmacion(user):
     subject = 'Confirma tu correo electrónico'
     html_message = render_to_string('cuentas/email_confirmacion.html', {'codigo': codigo})
     
-    try:
-        send_mail(
-            subject=subject,
-            message='',
-            from_email=None,
-            recipient_list=[user.email],
-            html_message=html_message,
-            fail_silently=False
-        )
-        logger.info(f"Email de confirmación enviado exitosamente a {user.email}")
-    except Exception as e:
-        logger.error(f"Error al enviar email de confirmación a {user.email}: {e}")
-        raise  # Re-lanzar la excepción para que el usuario sepa que hubo un error
+    # Enviar email en un thread daemon con fail_silently=True
+    thread = threading.Thread(
+        target=_enviar_email_async,
+        args=(subject, html_message, [user.email])
+    )
+    thread.daemon = True
+    thread.start()
+    logger.info(f"Thread de email de confirmación iniciado para {user.email}")
 
 
 def enviar_email_bienvenida(user):
     """
-    Envía el email de bienvenida de forma síncrona.
+    Envía el email de bienvenida de forma asíncrona usando threads daemon.
     """
     subject = 'Bienvenido a NimyPine - Tus credenciales de acceso'
     html_message = render_to_string('cuentas/email_bienvenida.html', {'user': user})
     
-    try:
-        send_mail(
-            subject=subject,
-            message='',
-            from_email=None,
-            recipient_list=[user.email],
-            html_message=html_message,
-            fail_silently=False
-        )
-        logger.info(f"Email de bienvenida enviado exitosamente a {user.email}")
-    except Exception as e:
-        logger.error(f"Error al enviar email de bienvenida a {user.email}: {e}")
-        # No re-lanzamos la excepción aquí porque el email de bienvenida no es crítico
+    # Enviar email en un thread daemon con fail_silently=True
+    thread = threading.Thread(
+        target=_enviar_email_async,
+        args=(subject, html_message, [user.email])
+    )
+    thread.daemon = True
+    thread.start()
+    logger.info(f"Thread de email de bienvenida iniciado para {user.email}")
 
 
 def login_view(request):

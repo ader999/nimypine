@@ -1,81 +1,16 @@
 # cuentas/views.py
 import re
-import random
-import string
-import threading
-import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
 from django.urls import reverse
 from .decorators import rol_requerido
 from .forms import RegistroMipymeForm, CreacionUsuarioMipymeForm, EditarRolUsuarioForm, RegistroCreadorForm, SoloMipymeForm
 from .models import Mipyme, Usuario
 from .funciones import generar_username_unico
-
-logger = logging.getLogger(__name__)
-
-
-def _enviar_email_async(subject, html_message, recipient_list):
-    """
-    Función interna para enviar emails en un thread separado.
-    Usa fail_silently=True para evitar bloquear el worker en caso de timeout.
-    """
-    try:
-        send_mail(
-            subject=subject,
-            message='',
-            from_email=None,
-            recipient_list=recipient_list,
-            html_message=html_message,
-            fail_silently=True  # No lanzar excepciones que puedan bloquear el thread
-        )
-        logger.info(f"Email enviado exitosamente a {recipient_list}")
-    except Exception as e:
-        logger.error(f"Error al enviar email a {recipient_list}: {e}")
-
-
-def enviar_email_confirmacion(user):
-    """
-    Envía el email de confirmación de forma asíncrona usando threads daemon.
-    El código se guarda en la BD antes de intentar enviar el email.
-    """
-    codigo = ''.join(random.choices(string.digits, k=6))
-    user.codigo_confirmacion = codigo
-    user.save()
-    
-    subject = 'Confirma tu correo electrónico'
-    html_message = render_to_string('cuentas/email_confirmacion.html', {'codigo': codigo})
-    
-    # Enviar email en un thread daemon con fail_silently=True
-    thread = threading.Thread(
-        target=_enviar_email_async,
-        args=(subject, html_message, [user.email])
-    )
-    thread.daemon = True
-    thread.start()
-    logger.info(f"Thread de email de confirmación iniciado para {user.email}")
-
-
-def enviar_email_bienvenida(user):
-    """
-    Envía el email de bienvenida de forma asíncrona usando threads daemon.
-    """
-    subject = 'Bienvenido a NimyPine - Tus credenciales de acceso'
-    html_message = render_to_string('cuentas/email_bienvenida.html', {'user': user})
-    
-    # Enviar email en un thread daemon con fail_silently=True
-    thread = threading.Thread(
-        target=_enviar_email_async,
-        args=(subject, html_message, [user.email])
-    )
-    thread.daemon = True
-    thread.start()
-    logger.info(f"Thread de email de bienvenida iniciado para {user.email}")
+from .utils import enviar_email_confirmacion, enviar_email_bienvenida
 
 
 def login_view(request):

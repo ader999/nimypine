@@ -18,7 +18,7 @@ env = environ.Env(
 )
 
 # Lee el archivo .env desde el directorio correcto
-environ.Env.read_env(os.path.join(BASE_DIR, 'mipymes_project', '.env'))
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 
 # --- Configuraciones de Seguridad y Núcleo ---

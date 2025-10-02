@@ -134,14 +134,16 @@ PAYPAL_CLIENT_SECRET = env('PAYPAL_KEY')
 PAYPAL_MODE = 'sandbox'  # Cambiar a 'live' para producción
 
 # Email settings
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.environ.get('EMAIL_HOST')
-EMAIL_PORT = 465
-EMAIL_USE_SSL = True
-EMAIL_USE_TLS = False
-EMAIL_HOST_USER = os.environ.get('EMAIL_USER')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PWS')
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+# La configuración de email SMTP se ha movido a una llamada directa a la API de Resend
+# en cuentas/utils.py para solucionar problemas de conectividad en Railway.
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = os.environ.get('EMAIL_HOST')
+# EMAIL_PORT = 465
+# EMAIL_USE_SSL = True
+# EMAIL_USE_TLS = False
+# EMAIL_HOST_USER = os.environ.get('EMAIL_USER')
+# EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PWS')
+# DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # --- Resto de la Configuración ---
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

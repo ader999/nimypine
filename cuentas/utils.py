@@ -35,7 +35,7 @@ def enviar_email_confirmacion(user):
     try:
         logger.info(f"Intentando enviar email a {user.email} vía Resend...")
         params = {
-            "from": "NimyPine <onboarding@resend.dev>",
+            "from": "NimyPine <noreply@codeader.com>",
             "to": [user.email],
             "subject": subject,
             "html": html_body,

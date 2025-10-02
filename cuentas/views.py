@@ -2,6 +2,8 @@
 import re
 import random
 import string
+import threading
+import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
@@ -15,34 +17,62 @@ from .forms import RegistroMipymeForm, CreacionUsuarioMipymeForm, EditarRolUsuar
 from .models import Mipyme, Usuario
 from .funciones import generar_username_unico
 
+logger = logging.getLogger(__name__)
+
+
+def _enviar_email_async(subject, html_message, recipient_list):
+    """
+    Función interna para enviar emails en un thread separado.
+    Esto previene que el envío de emails bloquee el worker de Gunicorn.
+    """
+    try:
+        send_mail(
+            subject=subject,
+            message='',
+            from_email=None,
+            recipient_list=recipient_list,
+            html_message=html_message,
+            fail_silently=False
+        )
+        logger.info(f"Email enviado exitosamente a {recipient_list}")
+    except Exception as e:
+        logger.error(f"Error al enviar email a {recipient_list}: {e}")
+
 
 def enviar_email_confirmacion(user):
+    """
+    Envía el email de confirmación de forma asíncrona.
+    """
     codigo = ''.join(random.choices(string.digits, k=6))
     user.codigo_confirmacion = codigo
     user.save()
+    
     subject = 'Confirma tu correo electrónico'
     html_message = render_to_string('cuentas/email_confirmacion.html', {'codigo': codigo})
-    send_mail(
-        subject=subject,
-        message='',
-        from_email=None,
-        recipient_list=[user.email],
-        html_message=html_message,
-        fail_silently=False
+    
+    # Enviar email en un thread separado para no bloquear el worker
+    thread = threading.Thread(
+        target=_enviar_email_async,
+        args=(subject, html_message, [user.email])
     )
+    thread.daemon = True
+    thread.start()
 
 
 def enviar_email_bienvenida(user):
+    """
+    Envía el email de bienvenida de forma asíncrona.
+    """
     subject = 'Bienvenido a NimyPine - Tus credenciales de acceso'
     html_message = render_to_string('cuentas/email_bienvenida.html', {'user': user})
-    send_mail(
-        subject=subject,
-        message='',
-        from_email=None,
-        recipient_list=[user.email],
-        html_message=html_message,
-        fail_silently=False
+    
+    # Enviar email en un thread separado para no bloquear el worker
+    thread = threading.Thread(
+        target=_enviar_email_async,
+        args=(subject, html_message, [user.email])
     )
+    thread.daemon = True
+    thread.start()
 
 
 def login_view(request):

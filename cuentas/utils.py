@@ -51,32 +51,36 @@ def enviar_email_confirmacion(user):
     logger.info(f"=== FIN enviar_email_confirmacion ===")
     return codigo
 
-# TODO: Refactorizar esta función para usar Resend también.
-# def enviar_email_bienvenida(user):
-#     """
-#     Envía el email de bienvenida al usuario.
-#     """
-#     logger.info(f"=== INICIO enviar_email_bienvenida para {user.email} ===")
-#
-#     subject = 'Bienvenido a NimyPine - Tus credenciales de acceso'
-#     mensaje = render_to_string('cuentas/email_bienvenida.html', {'user': user})
-#     logger.info(f"Template renderizado correctamente")
-#
-#     try:
-#         logger.info(f"Creando EmailMessage...")
-#         email = EmailMessage(
-#             subject,
-#             mensaje,
-#             to=[user.email],
-#         )
-#         email.content_subtype = 'html'
-#         logger.info(f"Intentando enviar email...")
-#         result = email.send()
-#         logger.info(f"Email.send() retornó: {result}")
-#         logger.info(f"Email de bienvenida enviado exitosamente a {user.email}")
-#     except Exception as e:
-#         logger.error(f"ERROR al enviar email de bienvenida a {user.email}: {type(e).__name__}: {e}")
-#         import traceback
-#         logger.error(f"Traceback completo:\n{traceback.format_exc()}")
-#
-#     logger.info(f"=== FIN enviar_email_bienvenida ===")
+def enviar_email_bienvenida(user):
+    """
+    Envía el email de bienvenida al usuario usando Resend.
+    """
+    logger.info(f"=== INICIO enviar_email_bienvenida para {user.email} (usando Resend) ===")
+
+    api_key = os.environ.get('RESEND_API_KEY')
+    if not api_key:
+        logger.error("RESEND_API_KEY no encontrada en las variables de entorno para email de bienvenida.")
+        return
+    resend.api_key = api_key
+
+    subject = '¡Bienvenido a NimyPine!'
+    html_body = render_to_string('cuentas/email_bienvenida.html', {'user': user})
+    logger.info("Template de email de bienvenida renderizado correctamente.")
+
+    try:
+        logger.info(f"Intentando enviar email de bienvenida a {user.email} vía Resend...")
+        params = {
+            "from": "NimyPine <noreply@codeader.com>",
+            "to": [user.email],
+            "subject": subject,
+            "html": html_body,
+        }
+        email = resend.Emails.send(params)
+        logger.info(f"Email de bienvenida enviado exitosamente a {user.email}. Response: {email}")
+
+    except Exception as e:
+        logger.error(f"ERROR al enviar email de bienvenida a {user.email} con Resend: {type(e).__name__}: {e}")
+        import traceback
+        logger.error(f"Traceback completo:\n{traceback.format_exc()}")
+
+    logger.info(f"=== FIN enviar_email_bienvenida ===")

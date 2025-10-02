@@ -70,13 +70,13 @@ class Mipyme(models.Model):
     porcentaje_ganancia_predeterminado = models.DecimalField(
         max_digits=5,
         decimal_places=2,
-        default=20.00,
+        default=0.00,
         verbose_name="Porcentaje de ganancia por defecto (%)"
     )
     margen_desperdicio_predeterminado = models.DecimalField(
         max_digits=5,
         decimal_places=2,
-        default=5.00,
+        default=0.00,
         verbose_name="Margen de desperdicio por defecto (%)"
     )
     moneda_predeterminada = models.CharField(

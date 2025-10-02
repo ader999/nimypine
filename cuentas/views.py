@@ -10,7 +10,7 @@ from .decorators import rol_requerido
 from .forms import RegistroMipymeForm, CreacionUsuarioMipymeForm, EditarRolUsuarioForm, RegistroCreadorForm, SoloMipymeForm
 from .models import Mipyme, Usuario
 from .funciones import generar_username_unico
-from .utils import enviar_email_confirmacion #, enviar_email_bienvenida
+from .utils import enviar_email_confirmacion, enviar_email_bienvenida
 
 
 def login_view(request):
@@ -209,7 +209,7 @@ def confirmar_email_view(request):
                     user.email_confirmado = True
                     user.codigo_confirmacion = None
                     user.save()
-                    # enviar_email_bienvenida(user) # Comentado temporalmente
+                    enviar_email_bienvenida(user)
                     del request.session['user_id_confirmacion']
                     # Especificar el backend de autenticación explícitamente
                     login(request, user, backend='cuentas.backends.EmailOrUsernameModelBackend')

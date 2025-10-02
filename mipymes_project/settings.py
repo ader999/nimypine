@@ -102,6 +102,7 @@ USE_TZ = True
 # --- Archivos Estáticos (Static Files) - Servidos por WhiteNoise ---
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # --- Archivos Multimedia (Media Files) - Subidos a MinIO ---
 MEDIA_URL = '/media/'

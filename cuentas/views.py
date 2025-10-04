@@ -51,7 +51,9 @@ def crear_mipyme_para_creador_view(request):
     if request.method == 'POST':
         form = SoloMipymeForm(request.POST)
         if form.is_valid():
-            mipyme = form.save()  # Guardamos la nueva Mipyme
+            mipyme = form.save(commit=False)  # No guardamos aún
+            mipyme.propietario = request.user # Asignamos el propietario
+            mipyme.save()  # Ahora sí, guardamos la Mipyme
 
             # Actualizamos al usuario actual
             usuario = request.user
@@ -141,6 +143,10 @@ def registro_mipyme_view(request):
                     es_admin_mipyme=True,
                     es_creador_contenido=True
                 )
+                # 3. Asignar el propietario a la Mipyme
+                mipyme.propietario = admin_usuario
+                mipyme.save()
+
                 enviar_email_confirmacion(admin_usuario)
                 request.session['user_id_confirmacion'] = admin_usuario.id
                 messages.success(request, 'Usuario creado. Revisa tu correo para confirmar tu email.')

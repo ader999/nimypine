@@ -10,3 +10,4 @@ produccion/__pycache__/
 .venv
 /.venv
 media
+/.idea

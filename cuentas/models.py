@@ -50,6 +50,7 @@ class Mipyme(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
     numero_telefono = models.CharField(max_length=20, null=True, blank=True)
     correo = models.EmailField(max_length=50, null=True, blank=True)
+    propietario = models.ForeignKey('Usuario', on_delete=models.CASCADE, related_name='mipymes_propias', null=True)
     tipo = models.ForeignKey(TipoEmpresa, on_delete=models.SET_NULL, null=True, verbose_name="Tipo de Empresa")
     sector = models.ForeignKey(SectorEconomico, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Sector Económico")
     identificador_fiscal = models.CharField(
@@ -117,9 +118,6 @@ class Usuario(AbstractUser):
     # Campos para confirmación de email
     email_confirmado = models.BooleanField(default=False, verbose_name="Email confirmado")
     codigo_confirmacion = models.CharField(max_length=6, null=True, blank=True, verbose_name="Código de confirmación")
-
-    def __str__(self):
-        return self.username
 
     def __str__(self):
         return self.username

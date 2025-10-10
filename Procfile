@@ -1,2 +1,2 @@
-release: python manage.py collectstatic --noinput
+release: python manage.py migrate && python manage.py collectstatic --noinput
 web: gunicorn mipymes_project.wsgi --timeout 180 --workers 1 --threads 4 --preload --graceful-timeout 30 --keep-alive 5 --log-level info

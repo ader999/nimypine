@@ -11,11 +11,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copia el resto del código de la aplicación
 COPY . .
 
-# Recopila archivos estáticos
-RUN python manage.py collectstatic --noinput
+# Copia el script de entrada y hazlo ejecutable
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
 
 # Expone el puerto 8000
 EXPOSE 8000
 
-# Comando para ejecutar la aplicación con Gunicorn
+# Usa el entrypoint para recopilar estáticos y ejecutar el comando
+ENTRYPOINT ["./entrypoint.sh"]
 CMD ["gunicorn", "mipymes_project.wsgi:application", "--bind", "0.0.0.0:8000"]

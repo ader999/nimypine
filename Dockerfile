@@ -20,4 +20,4 @@ EXPOSE 8000
 
 # Usa el entrypoint para recopilar estáticos y ejecutar el comando
 ENTRYPOINT ["./entrypoint.sh"]
-CMD ["gunicorn", "mipymes_project.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "mipymes_project.wsgi:application", "--bind", "0.0.0.0:4000"]

@@ -10,8 +10,8 @@ from openpyxl import Workbook
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Producto, Insumo, Formulacion, PasoDeProduccion, Proceso, Venta, VentaItem
-from .forms import ProductoForm, FormulacionForm, InsumoForm, FormulacionUpdateForm, ProcesoForm, PasoUpdateForm, PasoDeProduccionForm, CalculadoraLotesForm, VentaItemFormSet
+from .models import Producto, Insumo, Formulacion, PasoDeProduccion, Proceso, Venta, VentaItem, Impuesto
+from .forms import ProductoForm, FormulacionForm, InsumoForm, FormulacionUpdateForm, ProcesoForm, PasoUpdateForm, PasoDeProduccionForm, CalculadoraLotesForm, VentaItemFormSet, ImpuestoForm
 from cuentas.decorators import rol_requerido, mipyme_requerida
 from cuentas.forms import CambiarContrasenaForm, ActualizarPerfilForm, ConfigurarAvatarForm, EditarInformacionEmpresaForm, ConfigurarLogoForm, CambiarSectorEconomicoForm, ConfigurarParametrosProduccionForm
 from cuentas.models import Usuario
@@ -233,6 +233,11 @@ def detalle_producto(request, producto_id):
     )
     form_proceso = PasoDeProduccionForm(mipyme=mipyme_actual)
 
+    # Obtener impuestos activos de la mipyme
+    impuestos_activos = Impuesto.objects.filter(mipyme=mipyme_actual, activo=True).order_by('nombre')
+    # Obtener impuestos aplicados al producto
+    impuestos_aplicados = producto.impuestos.all()
+
     if request.method == 'POST':
         # Identificamos qué formulario se envió usando el nombre del botón 'submit'
 
@@ -267,9 +272,50 @@ def detalle_producto(request, producto_id):
                 # Redirigimos para limpiar el formulario y evitar reenvíos
                 return redirect('produccion:detalle_producto', producto_id=producto.id)
 
+        # --- LÓGICA PARA AGREGAR IMPUESTO ---
+        elif 'agregar_impuesto' in request.POST:
+            impuesto_id = request.POST.get('impuesto_id')
+            try:
+                impuesto = Impuesto.objects.get(id=impuesto_id, mipyme=mipyme_actual, activo=True)
+                if impuesto not in impuestos_aplicados:
+                    producto.impuestos.add(impuesto)
+                    messages.success(request, f'Impuesto "{impuesto.nombre}" agregado al producto.')
+                else:
+                    messages.warning(request, f'El impuesto "{impuesto.nombre}" ya está aplicado al producto.')
+            except Impuesto.DoesNotExist:
+                messages.error(request, 'Impuesto no encontrado.')
+            return redirect('produccion:detalle_producto', producto_id=producto.id)
+
+        # --- LÓGICA PARA QUITAR IMPUESTO ---
+        elif 'quitar_impuesto' in request.POST:
+            impuesto_id = request.POST.get('impuesto_id')
+            try:
+                impuesto = Impuesto.objects.get(id=impuesto_id, mipyme=mipyme_actual)
+                if impuesto in impuestos_aplicados:
+                    producto.impuestos.remove(impuesto)
+                    messages.success(request, f'Impuesto "{impuesto.nombre}" removido del producto.')
+                else:
+                    messages.warning(request, f'El impuesto "{impuesto.nombre}" no está aplicado al producto.')
+            except Impuesto.DoesNotExist:
+                messages.error(request, 'Impuesto no encontrado.')
+            return redirect('produccion:detalle_producto', producto_id=producto.id)
+
     # Obtenemos los items para mostrarlos en las tablas
     formulacion_items = Formulacion.objects.filter(producto=producto).order_by('insumo__nombre')
     pasos_produccion = PasoDeProduccion.objects.filter(producto=producto).order_by('proceso__nombre')
+
+    # Preparar lista de impuestos con estado
+    impuestos_con_estado = []
+    for impuesto in impuestos_activos:
+        aplicado = impuesto in impuestos_aplicados
+        impuestos_con_estado.append({
+            'impuesto': impuesto,
+            'aplicado': aplicado,
+            'mensaje': f'Se agregó "{impuesto.nombre}" al producto, pero no se está aplicando porque está inactivo.' if aplicado and not impuesto.activo else None
+        })
+
+    # Verificar si hay impuestos activos aplicados
+    has_active_impuestos = producto.impuestos.filter(activo=True).exists()
 
     contexto = {
         'producto': producto,
@@ -279,6 +325,9 @@ def detalle_producto(request, producto_id):
         'form_proceso': form_proceso,  # Pasamos el formulario de procesos
         'usar_margen_desperdicio_predeterminado': usar_margen_desperdicio_predeterminado,
         'margen_desperdicio_predeterminado': mipyme_actual.margen_desperdicio_predeterminado,
+        'impuestos_con_estado': impuestos_con_estado,
+        'impuestos_aplicados': impuestos_aplicados,
+        'has_active_impuestos': has_active_impuestos,
         'nombrepine': request.user.mipyme.nombre
     }
     return render(request, 'produccion/detalle_producto.html', contexto)
@@ -1125,6 +1174,73 @@ def exportar_productos_excel(request):
     # Guardar workbook en la respuesta
     wb.save(response)
     return response
+
+@login_required
+@mipyme_requerida
+@rol_requerido('ADMIN')
+def gestion_impuestos(request):
+    """
+    Vista para gestionar los impuestos de la empresa.
+    Solo accesible para administradores.
+    """
+    mipyme = request.user.mipyme
+    impuestos = Impuesto.objects.filter(mipyme=mipyme).order_by('nombre')
+
+    if request.method == 'POST':
+        # Manejar eliminación
+        if 'impuesto_id_eliminar' in request.POST:
+            impuesto_id = request.POST.get('impuesto_id_eliminar')
+            try:
+                impuesto = Impuesto.objects.get(id=impuesto_id, mipyme=mipyme)
+                nombre = impuesto.nombre
+                impuesto.delete()
+                messages.success(request, f'Impuesto "{nombre}" eliminado exitosamente.')
+            except Impuesto.DoesNotExist:
+                messages.error(request, 'Impuesto no encontrado.')
+            return redirect('produccion:gestion_impuestos')
+
+        # Manejar edición
+        elif 'impuesto_id' in request.POST:
+            impuesto_id = request.POST.get('impuesto_id')
+            try:
+                impuesto = Impuesto.objects.get(id=impuesto_id, mipyme=mipyme)
+                form = ImpuestoForm(request.POST, instance=impuesto)
+                if form.is_valid():
+                    nombre_impuesto = form.cleaned_data['nombre']
+                    # Verificar si el nombre ya existe en otro impuesto (excluyendo el actual)
+                    if Impuesto.objects.filter(mipyme=mipyme, nombre=nombre_impuesto).exclude(id=impuesto_id).exists():
+                        form.add_error('nombre', 'Ya existe un impuesto con este nombre para esta empresa.')
+                    else:
+                        form.save()
+                        messages.success(request, 'Impuesto actualizado exitosamente.')
+                        return redirect('produccion:gestion_impuestos')
+            except Impuesto.DoesNotExist:
+                messages.error(request, 'Impuesto no encontrado.')
+                form = ImpuestoForm()
+
+        # Manejar creación
+        else:
+            form = ImpuestoForm(request.POST)
+            if form.is_valid():
+                nombre_impuesto = form.cleaned_data['nombre']
+                if Impuesto.objects.filter(mipyme=mipyme, nombre=nombre_impuesto).exists():
+                    form.add_error('nombre', 'Ya existe un impuesto con este nombre para esta empresa.')
+                else:
+                    nuevo_impuesto = form.save(commit=False)
+                    nuevo_impuesto.mipyme = mipyme
+                    nuevo_impuesto.save()
+                    messages.success(request, 'Impuesto agregado exitosamente.')
+                    return redirect('produccion:gestion_impuestos')
+    else:
+        form = ImpuestoForm()
+
+    contexto = {
+        'impuestos': impuestos,
+        'form': form,
+        'titulo': 'Gestión de Impuestos',
+        'nombrepine': mipyme.nombre
+    }
+    return render(request, 'produccion/gestion_impuestos.html', contexto)
 
 # --- FIN DE CONFIGURACIÓN ---
 # --- FIN DE VENTAS ---

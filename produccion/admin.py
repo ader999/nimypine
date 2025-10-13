@@ -2,7 +2,7 @@
 from django.contrib import admin
 from .models import (
     Producto, Insumo, UnidadMedida, EstándaresProducto,
-    Venta, VentaItem
+    Venta, VentaItem, Impuesto
 )
 
 class VentaItemInline(admin.TabularInline):
@@ -30,4 +30,5 @@ admin.site.register(Producto)
 admin.site.register(Insumo)
 admin.site.register(UnidadMedida)
 admin.site.register(EstándaresProducto)
+admin.site.register(Impuesto)
 

@@ -53,6 +53,8 @@ class Producto(models.Model):
     # --- CAMPO MODIFICADO ---
     # Relacionamos los productos con los procesos a través de una tabla intermedia
     procesos = models.ManyToManyField(Proceso, through='PasoDeProduccion', related_name='productos')
+    # Relacionamos los productos con los impuestos
+    impuestos = models.ManyToManyField('Impuesto', blank=True, related_name='productos')
 
     def __str__(self):
         return self.nombre
@@ -90,6 +92,17 @@ class Producto(models.Model):
             # El costo_de_produccion ya es una propiedad que calcula el total
             return self.precio_venta - self.costo_de_produccion
         return decimal.Decimal(0)
+
+    @property
+    def precio_con_impuestos(self):
+        """Calcula el costo de producción incluyendo los impuestos aplicados (sin ganancias)."""
+        precio_base = self.costo_de_produccion
+        total_impuestos = decimal.Decimal(0)
+
+        for impuesto in self.impuestos.filter(activo=True):
+            total_impuestos += precio_base * (impuesto.porcentaje / 100)
+
+        return precio_base + total_impuestos
 
     def save(self, *args, **kwargs):
         # Primero guardar la instancia para obtener pk
@@ -211,3 +224,19 @@ class VentaItem(models.Model):
         # Calcular subtotal automáticamente
         self.subtotal = decimal.Decimal(self.cantidad) * self.precio_unitario
         super().save(*args, **kwargs)
+
+
+# Modelo para Impuestos
+class Impuesto(models.Model):
+    mipyme = models.ForeignKey(Mipyme, on_delete=models.CASCADE, related_name='impuestos')
+    nombre = models.CharField(max_length=100, help_text="Nombre del impuesto, ej: IVA, DGI")
+    porcentaje = models.DecimalField(max_digits=5, decimal_places=2, help_text="Porcentaje del impuesto")
+    activo = models.BooleanField(default=True, help_text="Si el impuesto está activo")
+
+    class Meta:
+        verbose_name = "Impuesto"
+        verbose_name_plural = "Impuestos"
+        unique_together = ('mipyme', 'nombre')
+
+    def __str__(self):
+        return f"{self.nombre} ({self.porcentaje}%) - {self.mipyme.nombre}"

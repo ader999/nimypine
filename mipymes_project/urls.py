@@ -13,6 +13,12 @@ urlpatterns = [
 
     path('asistente/', include('asistente.urls')),
 
+    # API URLs
+    path('api/', include([
+        path('cuentas/', include('cuentas.api_urls')),
+        path('produccion/', include('produccion.api_urls')),
+    ])),
+
     # Cualquier URL que no sea /admin/ la enviará al urls.py de la app 'cuentas'
     path('', include('cuentas.urls')),
 ]

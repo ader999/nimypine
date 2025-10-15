@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: mipymes_db
+      POSTGRES_USER: mipymes_user
+      POSTGRES_PASSWORD: mipymes_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mipymes_user -d mipymes_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  web:
+    build: .
+    environment:
+      SECRET_KEY: 'tu-clave-secreta-aqui'  # Cambia esto por una clave segura
+      DEBUG: 'False'
+      DATABASE_URL: postgres://mipymes_user:mipymes_password@db:5432/mipymes_db
+      MINIO_S3_ENDPOINT_URL: http://minio:9000
+      MINIO_ACCESS_KEY_ID: minioadmin
+      MINIO_SECRET_ACCESS_KEY: minioadmin123
+      MINIO_BUCKET_NAME: mipymes-bucket
+      PAYPAL_ID_CLIENT: 'tu-paypal-client-id'
+      PAYPAL_KEY: 'tu-paypal-secret'
+      # Agrega otras variables de entorno necesarias como EMAIL, etc.
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    ports:
+      - "8000:8000"  # Para desarrollo local; Coolify lo maneja automáticamente
+
+volumes:
+  postgres_data:
+  minio_data:

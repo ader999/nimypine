@@ -3,7 +3,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import modelformset_factory
-from .models import Producto, Formulacion, Insumo, Proceso, PasoDeProduccion, EstándaresProducto, Venta, VentaItem, UnidadMedida
+from .models import Producto, Formulacion, Insumo, Proceso, PasoDeProduccion, EstándaresProducto, Venta, VentaItem, UnidadMedida, Impuesto
 
 class ProductoForm(forms.ModelForm):
     class Meta:
@@ -266,6 +266,22 @@ class VentaItemForm(forms.ModelForm):
             if cantidad > producto.stock_actual:
                 raise ValidationError(f"No hay suficiente stock para {producto.nombre}. Stock disponible: {producto.stock_actual} unidades.")
         return cleaned_data
+
+
+class ImpuestoForm(forms.ModelForm):
+    class Meta:
+        model = Impuesto
+        fields = ['nombre', 'porcentaje', 'activo']
+        labels = {
+            'nombre': 'Nombre del Impuesto',
+            'porcentaje': 'Porcentaje (%)',
+            'activo': 'Activo',
+        }
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: IVA'}),
+            'porcentaje': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 15'}),
+            'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
 
 
 VentaItemFormSet = modelformset_factory(

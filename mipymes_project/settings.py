@@ -17,7 +17,7 @@ env = environ.Env(
     DEBUG=(bool, False)
 )
 
-# Lee el archivo .env
+# Lee el archivo .env desde el directorio correcto
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 
@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
+    "rest_framework.authtoken",
     "cuentas",
     "marketplace",
     "produccion",
@@ -102,6 +104,7 @@ USE_TZ = True
 # --- Archivos Estáticos (Static Files) - Servidos por WhiteNoise ---
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # --- Archivos Multimedia (Media Files) - Subidos a MinIO ---
 MEDIA_URL = '/media/'
@@ -134,13 +137,16 @@ PAYPAL_CLIENT_SECRET = env('PAYPAL_KEY')
 PAYPAL_MODE = 'sandbox'  # Cambiar a 'live' para producción
 
 # Email settings
-EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
-EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
-EMAIL_PORT = env.int('EMAIL_PORT', default=587)
-EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
-EMAIL_HOST_USER = env('EMAIL_USER', default='noreply@nimypine.com')
-EMAIL_HOST_PASSWORD = env('EMAIL_PWS', default='')
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+# La configuración de email SMTP se ha movido a una llamada directa a la API de Resend
+# en cuentas/utils.py para solucionar problemas de conectividad en Railway.
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = os.environ.get('EMAIL_HOST')
+# EMAIL_PORT = 465
+# EMAIL_USE_SSL = True
+# EMAIL_USE_TLS = False
+# EMAIL_HOST_USER = os.environ.get('EMAIL_USER')
+# EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PWS')
+# DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # --- Resto de la Configuración ---
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -152,3 +158,47 @@ AUTHENTICATION_BACKENDS = [
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 LOGIN_URL = 'cuentas:login'
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'cuentas': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.core.mail': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
+
+# Django REST Framework settings
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ],
+}

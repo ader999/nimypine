@@ -1,0 +1,166 @@
+{% extends 'produccion/base_produccion.html' %}
+
+{% block title %}Gestión de Impuestos{% endblock %}
+
+{% block page_title %}Gestión de Impuestos{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Formulario para agregar nuevo impuesto -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Agregar Nuevo Impuesto</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ form.nombre.id_for_label }}" class="form-label">{{ form.nombre.label }}</label>
+                        {{ form.nombre }}
+                        {% if form.nombre.errors %}
+                            <div class="text-danger small">{{ form.nombre.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.porcentaje.id_for_label }}" class="form-label">{{ form.porcentaje.label }}</label>
+                        {{ form.porcentaje }}
+                        {% if form.porcentaje.errors %}
+                            <div class="text-danger small">{{ form.porcentaje.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3 form-check">
+                        {{ form.activo }}
+                        <label for="{{ form.activo.id_for_label }}" class="form-check-label">{{ form.activo.label }}</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Agregar Impuesto</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de impuestos existentes -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Impuestos Configurados</h5>
+            </div>
+            <div class="card-body">
+                {% if impuestos %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Porcentaje</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for impuesto in impuestos %}
+                                    <tr>
+                                        <td>{{ impuesto.nombre }}</td>
+                                        <td>{{ impuesto.porcentaje }}%</td>
+                                        <td>
+                                            {% if impuesto.activo %}
+                                                <span class="badge bg-success">Activo</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Inactivo</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="editarImpuesto({{ impuesto.id }}, '{{ impuesto.nombre }}', {{ impuesto.porcentaje }}, {{ impuesto.activo|lower }})">
+                                                <i class="bi bi-pencil"></i> Editar
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="eliminarImpuesto({{ impuesto.id }}, '{{ impuesto.nombre }}')">
+                                                <i class="bi bi-trash"></i> Eliminar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No hay impuestos configurados aún.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar impuesto -->
+<div class="modal fade" id="editarImpuestoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Impuesto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editarImpuestoForm" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" id="impuestoId" name="impuesto_id">
+                    <div class="mb-3">
+                        <label for="editarNombre" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="editarNombre" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editarPorcentaje" class="form-label">Porcentaje (%)</label>
+                        <input type="number" class="form-control" id="editarPorcentaje" name="porcentaje" step="0.01" required>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="editarActivo" name="activo">
+                        <label for="editarActivo" class="form-check-label">Activo</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para confirmar eliminación -->
+<div class="modal fade" id="eliminarImpuestoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar el impuesto <strong id="impuestoNombreEliminar"></strong>?</p>
+                <p class="text-danger">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="eliminarImpuestoForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" id="impuestoIdEliminar" name="impuesto_id_eliminar">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function editarImpuesto(id, nombre, porcentaje, activo) {
+    document.getElementById('impuestoId').value = id;
+    document.getElementById('editarNombre').value = nombre;
+    document.getElementById('editarPorcentaje').value = porcentaje;
+    document.getElementById('editarActivo').checked = activo;
+    new bootstrap.Modal(document.getElementById('editarImpuestoModal')).show();
+}
+
+function eliminarImpuesto(id, nombre) {
+    document.getElementById('impuestoIdEliminar').value = id;
+    document.getElementById('impuestoNombreEliminar').textContent = nombre;
+    new bootstrap.Modal(document.getElementById('eliminarImpuestoModal')).show();
+}
+</script>
+{% endblock %}

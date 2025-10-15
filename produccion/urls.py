@@ -59,4 +59,6 @@ urlpatterns = [
     path('configuracion/configurar-logo/', views.configurar_logo, name='configurar_logo'),
     path('configuracion/cambiar-sector/', views.cambiar_sector_economico, name='cambiar_sector_economico'),
     path('configuracion/parametros-produccion/', views.configurar_parametros_produccion, name='configurar_parametros_produccion'),
+    # --- IMPUESTOS ---
+    path('impuestos/', views.gestion_impuestos, name='gestion_impuestos'),
 ]

@@ -28,6 +28,12 @@
                                 <td class="w-25"><strong>Precio de Venta (PVP)</strong></td>
                                 <td class="fs-5">${{ producto.precio_venta|floatformat:2 }}</td>
                             </tr>
+                            {% if has_active_impuestos %}
+                            <tr>
+                                <td><strong>Precio con Impuestos</strong></td>
+                                <td class="fs-5 fw-bold text-success">${{ producto.precio_con_impuestos|floatformat:2 }}</td>
+                            </tr>
+                            {% endif %}
                             <tr class="table-light">
                                 <td><strong>Costo de Producción Total</strong></td>
                                 <td class="fs-5">${{ producto.costo_de_produccion|floatformat:2 }}</td>
@@ -239,7 +245,7 @@
         <div class="card shadow-sm">
             <div class="card-header"><h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Añadir Proceso</h5></div>
             <div class="card-body">
-                 <!-- NOTA: El name="submit_proceso" es clave para que la vista sepa qué formulario se envió -->
+                  <!-- NOTA: El name="submit_proceso" es clave para que la vista sepa qué formulario se envió -->
                 <form method="post">
                     {% csrf_token %}
                     <div class="mb-3">
@@ -259,6 +265,86 @@
     </div>
 </div>
 
+<!-- ================================================================== -->
+<!-- NUEVA FILA: Para los Impuestos -->
+<!-- ================================================================== -->
+<div class="row mb-4">
+    <!-- Columna de la Lista de Impuestos -->
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header"><h5 class="mb-0"><i class="bi bi-cash-coin me-2"></i>Impuestos Aplicados</h5></div>
+            <div class="card-body">
+                {% if impuestos_con_estado %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Impuesto</th>
+                                    <th>Porcentaje</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in impuestos_con_estado %}
+                                <tr>
+                                    <td>{{ item.impuesto.nombre }}</td>
+                                    <td>{{ item.impuesto.porcentaje }}%</td>
+                                    <td>
+                                        {% if item.impuesto.activo %}
+                                            <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.aplicado %}
+                                            <form method="post" style="display: inline;">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="impuesto_id" value="{{ item.impuesto.id }}">
+                                                <button type="submit" name="quitar_impuesto" class="btn btn-sm btn-danger" title="Quitar impuesto">
+                                                    <i class="bi bi-dash-circle-fill"></i> Quitar
+                                                </button>
+                                            </form>
+                                            {% if item.mensaje %}
+                                                <div class="alert alert-warning mt-2 small">
+                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ item.mensaje }}
+                                                </div>
+                                            {% endif %}
+                                        {% else %}
+                                            <form method="post" style="display: inline;">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="impuesto_id" value="{{ item.impuesto.id }}">
+                                                <button type="submit" name="agregar_impuesto" class="btn btn-sm btn-success" title="Agregar impuesto">
+                                                    <i class="bi bi-plus-circle-fill"></i> Agregar
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">No hay impuestos activos configurados para esta empresa.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna de Información Adicional -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header"><h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Información sobre Impuestos</h5></div>
+            <div class="card-body">
+                <p class="mb-2">Los impuestos aplicados al producto se sumarán automáticamente al precio de venta.</p>
+                <p class="mb-2"><strong>Nota:</strong> Solo se muestran los impuestos activos. Si un impuesto estaba aplicado pero ahora está inactivo, se mostrará una advertencia.</p>
+                <p class="mb-0">Para gestionar los impuestos, ve a <a href="{% url 'produccion:gestion_impuestos' %}">Gestión de Impuestos</a>.</p>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="mt-4">
     <a href="{% url 'produccion:lista_productos' %}" class="btn btn-secondary"><i class="bi bi-arrow-left-circle me-1"></i> Volver al Listado</a>

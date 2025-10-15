@@ -1,5 +1,55 @@
 from rest_framework import serializers
-from .models import Producto
+from .models import Producto, Formulacion, PasoDeProduccion, Impuesto
+
+
+class FormulacionSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Formulacion model, providing details of insumos used in the product.
+    """
+    insumo_nombre = serializers.CharField(source='insumo.nombre', read_only=True)
+    insumo_descripcion = serializers.CharField(source='insumo.descripcion', read_only=True)
+    unidad = serializers.CharField(source='insumo.unidad.abreviatura', read_only=True)
+    costo_unitario = serializers.DecimalField(source='insumo.costo_unitario', max_digits=10, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = Formulacion
+        fields = [
+            'insumo_nombre',
+            'insumo_descripcion',
+            'unidad',
+            'cantidad',
+            'porcentaje_desperdicio',
+            'costo_unitario'
+        ]
+
+
+class PasoDeProduccionSerializer(serializers.ModelSerializer):
+    """
+    Serializer for PasoDeProduccion model, providing details of processes used in the product.
+    """
+    proceso_nombre = serializers.CharField(source='proceso.nombre', read_only=True)
+    costo_por_hora = serializers.DecimalField(source='proceso.costo_por_hora', max_digits=10, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = PasoDeProduccion
+        fields = [
+            'proceso_nombre',
+            'tiempo_en_minutos',
+            'costo_por_hora'
+        ]
+
+
+class ImpuestoSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Impuesto model, providing details of taxes applied to the product.
+    """
+    class Meta:
+        model = Impuesto
+        fields = [
+            'nombre',
+            'porcentaje',
+            'activo'
+        ]
 
 
 class ProductoSerializer(serializers.ModelSerializer):
@@ -8,6 +58,9 @@ class ProductoSerializer(serializers.ModelSerializer):
     """
     mipyme_name = serializers.CharField(source='mipyme.nombre', read_only=True)
     costo_de_produccion = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    formulacion = FormulacionSerializer(many=True, read_only=True)
+    procesos_detalles = PasoDeProduccionSerializer(source='pasodeproduccion_set', many=True, read_only=True)
+    impuestos_detalles = ImpuestoSerializer(source='impuestos', many=True, read_only=True)
 
     class Meta:
         model = Producto
@@ -27,6 +80,9 @@ class ProductoSerializer(serializers.ModelSerializer):
             'presentacion',
             'costo_de_produccion',
             'procesos',
-            'impuestos'
+            'impuestos',
+            'formulacion',
+            'procesos_detalles',
+            'impuestos_detalles'
         ]
         read_only_fields = ['id', 'costo_de_produccion']

@@ -247,6 +247,14 @@ def procesar_mensaje(mensaje, user, model='openai'):
         else:
             return "No hay ventas registradas."
 
+    elif any(kw in mensaje_lower for kw in ['agregar', 'añadir', 'registrar', 'crear']) and 'producto' in mensaje_lower:
+        # Buscar guía para agregar producto
+        guia = GuiaUsuario.objects.filter(activo=True, palabras_clave__icontains='agregar producto').first()
+        if guia:
+            return f"{guia.descripcion}\n\nPasos:\n{guia.pasos}"
+        else:
+            return "Para agregar un producto, ve a la sección de 'Producción', luego a 'Productos' y haz clic en 'Crear Producto'. Deberás completar un formulario con la información del nuevo producto."
+
     elif 'productos' in mensaje_lower:
         productos = Producto.objects.filter(mipyme=user.mipyme)
         return '\n'.join([f"{p.nombre}: ${p.precio_venta}" for p in productos])
@@ -318,14 +326,6 @@ def procesar_mensaje(mensaje, user, model='openai'):
             return f"{guia.descripcion}\n\nPasos:\n{guia.pasos}"
         else:
             return "Lo siento, no tengo una guía específica para agregar insumos en este momento."
-
-    elif any(kw in mensaje_lower for kw in ['agregar', 'añadir', 'registrar', 'crear']) and 'producto' in mensaje_lower:
-        # Buscar guía para agregar producto
-        guia = GuiaUsuario.objects.filter(activo=True, palabras_clave__icontains='agregar producto').first()
-        if guia:
-            return f"{guia.descripcion}\n\nPasos:\n{guia.pasos}"
-        else:
-            return "Para agregar un producto, ve a la sección de 'Producción', luego a 'Productos' y haz clic en 'Crear Producto'. Deberás completar un formulario con la información del nuevo producto."
 
     else:
         # Respuesta general con AI

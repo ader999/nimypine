@@ -22,7 +22,7 @@ urlpatterns = [
     path('productos/eliminar/<int:producto_id>/', views.eliminar_producto, name='eliminar_producto'),
 
     # --- NUEVA URL PARA ELIMINAR UN ITEM DE LA FORMULACIÓN ---
-    path('productos/<int:producto_id>/formulacion/eliminar/<int:item_id>/',
+    path('productos/<int:producto_id>/formulacion/eliminar/<int:item_id>',
          views.eliminar_formulacion_item,
          name='eliminar_formulacion_item'),
     # --- NUEVA URL PARA EDITAR UN ITEM DE LA FORMULACIÓN ---

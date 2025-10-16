@@ -218,7 +218,8 @@ def procesar_mensaje(mensaje, user, model='openai'):
         'produccion', 'insumo', 'venta', 'proceso', 'formulacion', 'producto', 'mipyme',
         'empresa', 'ventas', 'facturacion', 'estandarizar', 'sql', 'codigo', 'grafico',
         'agregar', 'registrar', 'crear', 'materia prima', 'materias primas', 'pasos produccion',
-        'produccion pasos', 'datos empresa', 'datos', 'informacion', 'moneda', 'predeterminada'
+        'produccion pasos', 'datos empresa', 'datos', 'informacion', 'moneda', 'predeterminada',
+        'cómo', 'guía', 'ayuda', 'instructivo', 'impuestos'
     ]
     if not any(kw in mensaje_lower for kw in palabras_clave):
         return "Lo siento, solo puedo ayudarte con temas relacionados con la gestión de tu mipyme, como producción, ventas, insumos o procesos. ¿En qué puedo asistirte en esos aspectos?"
@@ -262,6 +263,20 @@ def procesar_mensaje(mensaje, user, model='openai'):
         procesos = Proceso.objects.filter(mipyme=user.mipyme)
         return '\n'.join([f"{p.nombre}: ${p.costo_por_hora}/hora" for p in procesos])
 
+    elif 'impuestos' in mensaje_lower:
+       impuestos = user.mipyme.impuestos.all()
+       if impuestos:
+           return 'Impuestos configurados:\n' + '\n'.join([f"- {i.nombre} ({i.porcentaje}%)" for i in impuestos])
+       else:
+           return "No tienes impuestos configurados en tu mipyme."
+
+    elif 'impuestos' in mensaje_lower:
+       impuestos = user.mipyme.impuestos.all()
+       if impuestos:
+           return 'Impuestos configurados:\n' + '\n'.join([f"- {i.nombre} ({i.porcentaje}%)" for i in impuestos])
+       else:
+           return "No tienes impuestos configurados en tu mipyme."
+
     elif 'formulacion' in mensaje_lower:
         productos = Producto.objects.filter(mipyme=user.mipyme)
         response = ""
@@ -303,6 +318,14 @@ def procesar_mensaje(mensaje, user, model='openai'):
             return f"{guia.descripcion}\n\nPasos:\n{guia.pasos}"
         else:
             return "Lo siento, no tengo una guía específica para agregar insumos en este momento."
+
+    elif any(kw in mensaje_lower for kw in ['agregar', 'añadir', 'registrar', 'crear']) and 'producto' in mensaje_lower:
+        # Buscar guía para agregar producto
+        guia = GuiaUsuario.objects.filter(activo=True, palabras_clave__icontains='agregar producto').first()
+        if guia:
+            return f"{guia.descripcion}\n\nPasos:\n{guia.pasos}"
+        else:
+            return "Para agregar un producto, ve a la sección de 'Producción', luego a 'Productos' y haz clic en 'Crear Producto'. Deberás completar un formulario con la información del nuevo producto."
 
     else:
         # Respuesta general con AI

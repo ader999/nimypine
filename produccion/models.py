@@ -63,6 +63,8 @@ class Producto(models.Model):
     @property
     def costo_insumos(self):
         """Calcula el costo total de los insumos, incluyendo el desperdicio."""
+        if not self.pk:
+            return decimal.Decimal(0)
         costo_total_insumos = decimal.Decimal(0)
         for item in self.formulacion.all():
             costo_base = item.cantidad * item.insumo.costo_unitario
@@ -73,6 +75,8 @@ class Producto(models.Model):
     @property
     def costo_procesos(self):
         """Calcula el costo total de la mano de obra/procesos."""
+        if not self.pk:
+            return decimal.Decimal(0)
         costo_total_procesos = decimal.Decimal(0)
         # Usamos 'pasodeproduccion_set' para acceder a los pasos desde el producto
         for paso in self.pasodeproduccion_set.all():

@@ -261,3 +261,16 @@ def manejador_error_500(request):
     Vista para manejar los errores 500 (Error interno del servidor).
     """
     return render(request, 'cuentas/500.html', status=500)
+
+from django.http import JsonResponse
+from django.db import connection
+from django.db.utils import OperationalError
+
+def health_check(request):
+    try:
+        # Intenta forzar una conexión a la base de datos haciendo una consulta simple
+        connection.cursor()
+        return JsonResponse({"status": "ok", "message": "La conexión a la base de datos funciona."})
+    except OperationalError as e:
+        # Si falla, devuelve un error
+        return JsonResponse({"status": "error", "message": f"No se pudo conectar a la base de datos: {e}"}, status=500)

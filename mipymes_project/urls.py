@@ -3,8 +3,11 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.urls import path, include
+from cuentas.views import health_check
 
 urlpatterns = [
+    path('health-check/', health_check, name='health_check'),
     path('admin/', admin.site.urls),
 
     path('produccion/', include('produccion.urls')),

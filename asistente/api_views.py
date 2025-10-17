@@ -1,3 +1,4 @@
+import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -7,11 +8,15 @@ from .models import Conversacion, Mensaje
 from .serializers import ConversacionSerializer
 from .views import procesar_mensaje
 
+# Obtener el logger
+logger = logging.getLogger(__name__)
+
 class ChatbotAPIView(APIView):
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
+        logger.info(f"ChatbotAPIView: Petición POST recibida del usuario {request.user.username}")
         mensaje_usuario = request.data.get('mensaje')
         conversacion_id = request.data.get('conversacion_id')
         modelo_seleccionado = request.data.get('modelo', 'openai')

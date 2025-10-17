@@ -17,13 +17,13 @@ class ChatbotAPIView(APIView):
 
     def post(self, request, *args, **kwargs):
         logger.info(f"ChatbotAPIView: Petición POST recibida del usuario {request.user.username}")
-        mensaje_usuario = request.data.get('mensaje')
+        mensaje_usuario = request.data.get('message')
         conversacion_id = request.data.get('conversacion_id')
         modelo_seleccionado = request.data.get('modelo', 'openai')
 
         if not mensaje_usuario:
             return Response(
-                {'error': 'El campo "mensaje" es requerido.'},
+                {'error': 'El campo "message" es requerido.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 

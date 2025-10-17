@@ -29,7 +29,7 @@ ALLOWED_HOSTS = ['nimypine-production.up.railway.app', '127.0.0.1', 'nimypine.co
 CSRF_TRUSTED_ORIGINS = [
     'https://nimypine-production.up.railway.app',
     'http://127.0.0.1:8000',
-    'https://nimypine.codeader.com'
+    'https://nimypine.codeader.com',
     'https://10.0.1.37'
 ]
 

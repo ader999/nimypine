@@ -28,3 +28,19 @@ class ProductListAPIView(generics.ListAPIView):
         if hasattr(user, 'mipyme') and user.mipyme:
             return Producto.objects.filter(mipyme=user.mipyme).select_related('mipyme')
         return Producto.objects.none()
+from .serializers import VentaSerializer
+
+
+class CrearVentaAPIView(generics.CreateAPIView):
+    """
+    API view to create a new Venta.
+    """
+    serializer_class = VentaSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        # La lógica de creación, incluyendo la asignación de mipyme
+        # y el cálculo del total, ya está en el método `create` del serializer.
+        # El serializer necesita acceso al 'request' para obtener el usuario.
+        serializer.save()

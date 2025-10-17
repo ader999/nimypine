@@ -24,7 +24,7 @@ urlpatterns = [
     ])),
 
     # Cualquier URL que no sea /admin/ la enviará al urls.py de la app 'cuentas'
-    path('', include('cuentas.urls')),
+    path('cuentas/', include('cuentas.urls')),
 ]
 
 if settings.DEBUG:

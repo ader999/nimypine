@@ -86,3 +86,32 @@ class ProductoSerializer(serializers.ModelSerializer):
             'impuestos_detalles'
         ]
         read_only_fields = ['id', 'costo_de_produccion']
+from .models import Venta, VentaItem
+
+
+class VentaItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VentaItem
+        fields = ('producto', 'cantidad', 'precio_unitario')
+
+
+class VentaSerializer(serializers.ModelSerializer):
+    items = VentaItemSerializer(many=True)
+
+    class Meta:
+        model = Venta
+        fields = ('id', 'fecha', 'total', 'items')
+        read_only_fields = ('id', 'fecha', 'total')
+
+    def create(self, validated_data):
+        items_data = validated_data.pop('items')
+        mipyme = self.context['request'].user.mipyme
+        venta = Venta.objects.create(mipyme=mipyme, **validated_data)
+        for item_data in items_data:
+            VentaItem.objects.create(venta=venta, **item_data)
+            # Actualizar stock de producto
+            producto = item_data['producto']
+            producto.stock_actual -= item_data['cantidad']
+            producto.save()
+        venta.calcular_total()
+        return venta

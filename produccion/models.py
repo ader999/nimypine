@@ -117,7 +117,7 @@ class Producto(models.Model):
             self.precio_venta = decimal.Decimal('0.00')
         else:
             # Calcular el precio de venta basado en el costo y el porcentaje de ganancia
-            ganancia = costo_produccion * (self.porcentaje_ganancia / 100)
+            ganancia = costo_produccion * (decimal.Decimal(self.porcentaje_ganancia) / decimal.Decimal(100))
             self.precio_venta = costo_produccion + ganancia
 
         super().save(*args, **kwargs)

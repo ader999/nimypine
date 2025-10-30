@@ -14,4 +14,5 @@ urlpatterns = [
     path('pago_cancelado/<int:plantilla_id>/', views.pago_cancelado, name='marketplace_pago_cancelado'),
     path('perfil/', views.perfil_creador, name='marketplace_perfil'),
 
+    path('productos/', views.lista_productos_marketplace, name='marketplace_lista_productos'),
 ]

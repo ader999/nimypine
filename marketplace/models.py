@@ -2,6 +2,7 @@
 from django.db import models
 # Importamos el modelo de usuario de la app cuentas
 from cuentas.models import Usuario
+from produccion.models import Producto
 
 class PlantillaExcel(models.Model):
     nombre = models.CharField(max_length=200)
@@ -38,3 +39,16 @@ class Purchase(models.Model):
     class Meta:
         verbose_name = "Plantilla de Excel"
         verbose_name_plural = "Plantillas de Excel"
+
+
+class ProductoMarketplace(models.Model):
+    producto = models.OneToOneField(Producto, on_delete=models.CASCADE, related_name='marketplace_producto')
+    activo = models.BooleanField(default=True, verbose_name="Activo en Marketplace")
+    fecha_publicacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Publicación")
+
+    def __str__(self):
+        return f"{self.producto.nombre} - Marketplace"
+
+    class Meta:
+        verbose_name = "Producto en Marketplace"
+        verbose_name_plural = "Productos en Marketplace"

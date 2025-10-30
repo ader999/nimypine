@@ -8,7 +8,7 @@ from django.conf import settings
 from django.urls import reverse
 from decimal import Decimal
 import paypalrestsdk
-from .models import PlantillaExcel, Purchase  # Importamos el modelo de esta misma app
+from .models import PlantillaExcel, Purchase, ProductoMarketplace # Importamos el modelo de esta misma app
 from .forms import PlantillaExcelForm
 
 # Configurar PayPal
@@ -24,10 +24,15 @@ def listado_plantillas(request):
     """
     # Obtenemos todos los objetos del modelo PlantillaExcel
     plantillas = PlantillaExcel.objects.all()
+    productos_marketplace = ProductoMarketplace.objects.filter(
+        activo=True,
+        producto__mipyme__mostrar_productos_en_marketplace=True
+    ).select_related('producto', 'producto__mipyme')
 
     # Creamos el contexto (un diccionario) para pasar los datos a la plantilla
     contexto = {
-        'plantillas': plantillas
+        'plantillas': plantillas,
+        'productos_marketplace': productos_marketplace,
     }
 
     # Renderizamos la plantilla, que ahora está en la ruta namespaced
@@ -218,3 +223,18 @@ def perfil_creador(request):
     }
 
     return render(request, 'marketplace/perfil.html', contexto)
+
+
+def lista_productos_marketplace(request):
+    """
+    Muestra los productos de las Mipymes que han optado por aparecer en el marketplace.
+    """
+    productos = ProductoMarketplace.objects.filter(
+        activo=True,
+        producto__mipyme__mostrar_productos_en_marketplace=True
+    ).select_related('producto', 'producto__mipyme')
+
+    contexto = {
+        'productos': productos,
+    }
+    return render(request, 'marketplace/lista_productos.html', contexto)

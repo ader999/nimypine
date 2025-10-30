@@ -10,7 +10,7 @@ class ProductoForm(forms.ModelForm):
         model = Producto  # Le decimos al formulario que se base en el modelo Producto
 
         # Definimos los campos del modelo que queremos incluir en el formulario
-        fields = ['nombre', 'descripcion', 'porcentaje_ganancia', 'stock_actual', 'peso', 'tamano_largo', 'tamano_ancho', 'tamano_alto', 'presentacion']
+        fields = ['nombre', 'descripcion', 'imagen', 'porcentaje_ganancia', 'stock_actual', 'peso', 'tamano_largo', 'tamano_ancho', 'tamano_alto', 'presentacion']
 
         # Opcional: Personalizar las etiquetas y widgets para que se vean mejor con Bootstrap
         labels = {

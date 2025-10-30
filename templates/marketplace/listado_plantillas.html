@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Marketplace de Plantillas{% endblock title %}
 
@@ -70,4 +71,60 @@
         </div>
     {% endif %}
 </div>
+
+    <!-- SEPARADOR VISUAL -->
+    <hr class="my-5">
+
+    <!-- TÍTULO PARA LA SECCIÓN DE PRODUCTOS -->
+    <div class="text-center mb-4">
+        <h2 class="display-6 fw-bold">Productos de Mipymes</h2>
+        <p class="fs-5 text-muted">Descubre los productos ofrecidos por las Mipymes de nuestra comunidad.</p>
+    </div>
+
+    <!-- LISTADO DE PRODUCTOS DEL MARKETPLACE -->
+    {% if productos_marketplace %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+            {% for producto_market in productos_marketplace %}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <!-- Imagen del Producto -->
+                    {% if producto_market.producto.imagen %}
+                        <img src="{{ producto_market.producto.imagen.url }}" class="card-img-top" alt="{{ producto_market.producto.nombre }}" style="height: 180px; object-fit: cover;">
+                    {% else %}
+                        <img src="{% static 'imagen_no_disponible.svg' %}" class="card-img-top" alt="Imagen no disponible" style="height: 180px; object-fit: cover;">
+                    {% endif %}
+
+                    <!-- Cuerpo de la Tarjeta -->
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">{{ producto_market.producto.nombre }}</h5>
+                        
+                        <!-- Nombre de la Mipyme -->
+                        <small class="text-muted mb-2">
+                            Ofrecido por: <strong>{{ producto_market.producto.mipyme.nombre_negocio }}</strong>
+                        </small>
+
+                        <p class="card-text flex-grow-1">{{ producto_market.producto.descripcion|truncatewords:12 }}</p>
+
+                        <!-- Precio del Producto -->
+                        <div class="text-center mb-2">
+                            <span class="h5 text-success">C${{ producto_market.precio|floatformat:2 }}</span>
+                        </div>
+
+                        <!-- Botón de "Ver Detalles" (si aplica) -->
+                        <div class="mt-auto text-center">
+                            <a href="#" class="btn btn-outline-info disabled">
+                                <i class="bi bi-info-circle-fill me-1"></i> Próximamente
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-secondary text-center" role="alert">
+            <h4 class="alert-heading">Aún no hay productos</h4>
+            <p>Las Mipymes todavía no han publicado sus productos en el marketplace.</p>
+        </div>
+    {% endif %}
 {% endblock %}

@@ -86,6 +86,9 @@ class Mipyme(models.Model):
         default='USD',
         verbose_name="Moneda predeterminada"
     )
+    
+    # --- CONFIGURACIÓN DE MARKETPLACE ---
+    mostrar_productos_en_marketplace = models.BooleanField(default=False, verbose_name="Mostrar productos en Marketplace")
 
     def __str__(self):
         return f"{self.nombre} (ID: {self.id})"

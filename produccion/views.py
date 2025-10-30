@@ -186,7 +186,7 @@ def crear_producto(request):
 
     if request.method == 'POST':
         # Si el formulario fue enviado, procesa los datos
-        form = ProductoForm(request.POST, usar_porcentaje_predeterminado=usar_porcentaje_predeterminado, porcentaje_predeterminado=mipyme.porcentaje_ganancia_predeterminado)
+        form = ProductoForm(request.POST, request.FILES, usar_porcentaje_predeterminado=usar_porcentaje_predeterminado, porcentaje_predeterminado=mipyme.porcentaje_ganancia_predeterminado)
         if form.is_valid():
             # El formulario es válido, pero no lo guardes todavía
             nuevo_producto = form.save(commit=False)
@@ -381,7 +381,7 @@ def editar_producto(request, producto_id):
 
     if request.method == 'POST':
         # Pasamos 'instance=producto' para indicarle al formulario que estamos actualizando
-        form = ProductoForm(request.POST, instance=producto, usar_porcentaje_predeterminado=usar_porcentaje_predeterminado, porcentaje_predeterminado=mipyme.porcentaje_ganancia_predeterminado)
+        form = ProductoForm(request.POST, request.FILES, instance=producto, usar_porcentaje_predeterminado=usar_porcentaje_predeterminado, porcentaje_predeterminado=mipyme.porcentaje_ganancia_predeterminado)
         if form.is_valid():
             producto_editado = form.save(commit=False)
             # Si se usa porcentaje predeterminado, asignarlo automáticamente
@@ -1244,3 +1244,28 @@ def gestion_impuestos(request):
 
 # --- FIN DE CONFIGURACIÓN ---
 # --- FIN DE VENTAS ---
+
+@login_required
+@mipyme_requerida
+@rol_requerido('ADMIN')
+def configuracion_marketplace(request):
+    """
+    Permite al propietario de la Mipyme configurar la visibilidad de sus productos en el Marketplace.
+    """
+    mipyme = get_object_or_404(request.user.mipyme.__class__, pk=request.user.mipyme.pk)
+
+    if request.method == 'POST':
+        # El valor del checkbox vendrá como 'on' si está marcado, o no vendrá en el POST si no lo está.
+        # La forma correcta de manejar un checkbox es verificar si la clave existe en el POST.
+        # Si existe, está marcado (True). Si no, está desmarcado (False).
+        mipyme.mostrar_productos_en_marketplace = 'mostrar_productos_en_marketplace' in request.POST
+        mipyme.save()
+        messages.success(request, 'La configuración de visibilidad en el Marketplace ha sido actualizada.')
+        return redirect('produccion:configuracion_marketplace')
+
+    contexto = {
+        'mipyme': mipyme,
+        'titulo': 'Configuración del Marketplace',
+        'nombrepine': mipyme.nombre
+    }
+    return render(request, 'produccion/configuraciones/configuracion_marketplace.html', contexto)

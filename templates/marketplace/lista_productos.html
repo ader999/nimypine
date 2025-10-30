@@ -1,0 +1,34 @@
+{% extends "produccion/base_produccion.html" %}
+
+{% block title %}Marketplace - Nimypyme{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Productos en el Marketplace</h1>
+    <div class="row">
+        {% for producto_marketplace in productos_marketplace %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ producto_marketplace.producto.nombre }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">Vendido por: {{ producto_marketplace.producto.mipyme.nombre }}</h6>
+                    <p class="card-text">{{ producto_marketplace.producto.descripcion }}</p>
+                    <p class="card-text"><strong>Precio:</strong> ${{ producto_marketplace.producto.precio_venta }}</p>
+                    {% with producto=producto_marketplace.producto %}
+                        {% if producto.largo and producto.ancho and producto.alto %}
+                        <p class="card-text">
+                            <strong>Dimensiones:</strong> {{ producto.largo }} x {{ producto.ancho }} x {{ producto.alto }}
+                        </p>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col">
+            <p>No hay productos disponibles en el marketplace en este momento.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

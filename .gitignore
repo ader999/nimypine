@@ -1,11 +1,7 @@
 db.sqlite3
 .env
-cuentas/__pycache__/
-cuentas/migrations/__pycache__/
-marketplace/migrations/__pycache__/
-marketplace/__pycache__/
-mipymes_project/__pycache__/
-produccion/__pycache__/
+__pycache__/
+*.pyc
 /staticfiles
 .venv
 /.venv

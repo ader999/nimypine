@@ -50,6 +50,13 @@
                                 </div>
                             {% endif %}
                         </div>
+                        {% if form.errors %}
+                        <div class="mb-3 text-end">
+                            <a href="#" class="text-decoration-none small" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">
+                                ¿Olvidaste tu contraseña?
+                            </a>
+                        </div>
+                        {% endif %}
                         <div class="d-grid">
                             <button type="submit" id="login-btn" class="btn btn-primary btn-lg fw-bold">
                                 <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
@@ -63,6 +70,7 @@
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 document.querySelector('form').addEventListener('submit', function() {
     const btn = document.getElementById('login-btn');
@@ -71,5 +79,66 @@ document.querySelector('form').addEventListener('submit', function() {
     spinner.classList.remove('d-none');
     btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...';
 });
+
+$(document).ready(function() {
+    $('#resetPasswordForm').on('submit', function(e) {
+        e.preventDefault();
+        var email = $('#resetEmail').val();
+        var btn = $('#sendResetLink');
+        var originalText = btn.text();
+        
+        btn.prop('disabled', true).text('Enviando...');
+        $('#resetMessage').addClass('d-none').removeClass('alert-success alert-danger');
+
+        $.ajax({
+            url: "{% url 'cuentas:password_reset_request' %}",
+            type: "POST",
+            data: {
+                'email': email,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#resetMessage').text(response.message).addClass('alert alert-success').removeClass('d-none');
+                    $('#resetPasswordForm')[0].reset();
+                } else {
+                    $('#resetMessage').text(response.message).addClass('alert alert-danger').removeClass('d-none');
+                }
+            },
+            error: function() {
+                $('#resetMessage').text('Ocurrió un error. Inténtalo de nuevo.').addClass('alert alert-danger').removeClass('d-none');
+            },
+            complete: function() {
+                btn.prop('disabled', false).text(originalText);
+            }
+        });
+    });
+});
 </script>
+
+<!-- Modal Recuperar Contraseña -->
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="forgotPasswordModalLabel">Recuperar Contraseña</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted">Ingresa tu correo electrónico y te enviaremos instrucciones para restablecer tu contraseña.</p>
+        <div id="resetMessage" class="d-none mb-3"></div>
+        <form id="resetPasswordForm">
+            <div class="mb-3">
+                <label for="resetEmail" class="form-label">Correo Electrónico</label>
+                <input type="email" class="form-control" id="resetEmail" required>
+            </div>
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary" id="sendResetLink">Enviar enlace</button>
+            </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}

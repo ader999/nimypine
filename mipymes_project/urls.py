@@ -4,10 +4,11 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path, include
-from cuentas.views import health_check
+from cuentas.views import health_check, pagina_inicio
 
 urlpatterns = [
     path('health-check/', health_check, name='health_check'),
+    path('', pagina_inicio, name='home'),
     path('admin/', admin.site.urls),
 
     path('produccion/', include('produccion.urls')),

@@ -26,4 +26,18 @@ urlpatterns = [
     path('confirmar-email/', views.confirmar_email_view, name='confirmar_email'),
     path('crear-mipyme/', views.crear_mipyme_para_creador_view, name='crear_mipyme_para_creador'),
     path('no-mipyme-asociada/', views.no_mipyme_asociada, name='no_mipyme_asociada'),
+
+    # --- PASSWORD RESET URLS ---
+    path('password_reset/', views.password_reset_request, name='password_reset_request'),
+    
+    # path('password_reset/done/') -> YA NO SE USA (se maneja con AJAX)
+    
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(
+        template_name='cuentas/password_reset_confirm.html',
+        success_url='/cuentas/reset/done/'
+    ), name='password_reset_confirm'),
+    
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(
+        template_name='cuentas/password_reset_complete.html'
+    ), name='password_reset_complete'),
 ]

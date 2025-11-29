@@ -10,7 +10,7 @@ from .decorators import rol_requerido
 from .forms import RegistroMipymeForm, CreacionUsuarioMipymeForm, EditarRolUsuarioForm, RegistroCreadorForm, SoloMipymeForm
 from .models import Mipyme, Usuario
 from .funciones import generar_username_unico
-from .utils import enviar_email_confirmacion, enviar_email_bienvenida
+from .utils import enviar_email_confirmacion, enviar_email_bienvenida, enviar_email_reset_password
 
 
 def login_view(request):
@@ -23,7 +23,7 @@ def login_view(request):
                 return redirect('cuentas:inicio')  # O a donde corresponda
             else:
                 # Usuario no confirmado, enviar a confirmación
-                enviar_email_confirmacion(user)
+                enviar_email_confirmacion(user, request)
                 request.session['user_id_confirmacion'] = user.id
                 messages.info(request, 'Tu email no está confirmado. Revisa tu correo para el código de confirmación.')
                 return redirect('cuentas:confirmar_email')
@@ -105,7 +105,7 @@ def registro_creador_view(request):
                 last_name=datos['last_name'],
                 es_creador_contenido=True # ¡La clave está aquí!
             )
-            enviar_email_confirmacion(usuario)
+            enviar_email_confirmacion(usuario, request)
             request.session['user_id_confirmacion'] = usuario.id
             messages.success(request, 'Usuario creado. Revisa tu correo para confirmar tu email.')
             return redirect('cuentas:confirmar_email')
@@ -147,7 +147,7 @@ def registro_mipyme_view(request):
                 mipyme.propietario = admin_usuario
                 mipyme.save()
 
-                enviar_email_confirmacion(admin_usuario)
+                enviar_email_confirmacion(admin_usuario, request)
                 request.session['user_id_confirmacion'] = admin_usuario.id
                 messages.success(request, 'Usuario creado. Revisa tu correo para confirmar tu email.')
                 return redirect('cuentas:confirmar_email')
@@ -215,7 +215,7 @@ def confirmar_email_view(request):
                     user.email_confirmado = True
                     user.codigo_confirmacion = None
                     user.save()
-                    enviar_email_bienvenida(user)
+                    enviar_email_bienvenida(user, request)
                     del request.session['user_id_confirmacion']
                     # Especificar el backend de autenticación explícitamente
                     login(request, user, backend='cuentas.backends.EmailOrUsernameModelBackend')
@@ -231,7 +231,7 @@ def confirmar_email_view(request):
         else:
             messages.error(request, 'Sesión expirada. Regístrate de nuevo.')
             return redirect('cuentas:seleccion_registro')
-    return render(request, 'cuentas/confirmar_email.html')
+    return render(request, 'cuentas/email/confirmar_email.html')
 
 
 def manejador_error_403(request, exception):
@@ -274,3 +274,23 @@ def health_check(request):
     except OperationalError as e:
         # Si falla, devuelve un error
         return JsonResponse({"status": "error", "message": f"No se pudo conectar a la base de datos: {e}"}, status=500)
+
+from .utils import enviar_email_confirmacion, enviar_email_bienvenida, enviar_email_reset_password
+from django.contrib.auth.tokens import default_token_generator
+
+def password_reset_request(request):
+    if request.method == "POST":
+        email = request.POST.get('email')
+        if not email:
+            return JsonResponse({"success": False, "message": "Por favor ingresa un correo electrónico."})
+            
+        users = Usuario.objects.filter(email=email, is_active=True)
+        if users.exists():
+            for user in users:
+                enviar_email_reset_password(user, request)
+        
+        # Por seguridad, siempre respondemos con éxito para no revelar si el correo existe o no (Enumeración de usuarios)
+        # Y garantizamos que NO se envió nada si el usuario no existía (porque no entró al if users.exists())
+        return JsonResponse({"success": True, "message": "Si el correo existe en nuestra base de datos, recibirás las instrucciones para restablecer tu contraseña."})
+            
+    return JsonResponse({"success": False, "message": "Método no permitido."}, status=405)

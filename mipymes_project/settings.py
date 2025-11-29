@@ -140,14 +140,21 @@ PAYPAL_MODE = 'sandbox'  # Cambiar a 'live' para producción
 # Email settings
 # La configuración de email SMTP se ha movido a una llamada directa a la API de Resend
 # en cuentas/utils.py para solucionar problemas de conectividad en Railway.
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = os.environ.get('EMAIL_HOST')
-# EMAIL_PORT = 465
-# EMAIL_USE_SSL = True
-# EMAIL_USE_TLS = False
-# EMAIL_HOST_USER = os.environ.get('EMAIL_USER')
-# EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PWS')
-# DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+# Para el desarrollo local y formularios de Django por defecto (como reset password), usamos la consola.
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    # En producción, si se necesita que Django envíe correos (e.g. PasswordResetForm),
+    # se debería configurar un backend real o SMTP.
+    # Por ahora dejamos esto comentado o configuramos SMTP si Resend lo permite.
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = os.environ.get('EMAIL_HOST')
+    EMAIL_PORT = 465
+    EMAIL_USE_SSL = True
+    EMAIL_USE_TLS = False
+    EMAIL_HOST_USER = os.environ.get('EMAIL_USER')
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_PWS')
+    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # --- Resto de la Configuración ---
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

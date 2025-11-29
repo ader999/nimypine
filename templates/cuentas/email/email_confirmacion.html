@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bienvenido a NimyPine</title>
+    <title>Confirma tu correo electrónico</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -32,12 +32,12 @@
             text-align: center;
             padding: 20px;
         }
-        .username {
-            font-size: 24px;
+        .code {
+            font-size: 36px;
             font-weight: bold;
             color: #4CAF50;
             background-color: #e8f5e8;
-            padding: 15px;
+            padding: 20px;
             border-radius: 8px;
             margin: 20px 0;
             display: inline-block;
@@ -53,15 +53,15 @@
 <body>
     <div class="container">
         <div class="header">
-            <img src="https://www.photo-pick.com/online/api/v1/albums/aaef1284-1fd8-4bff-b09c-c5029be8add3.jpg" class="logo" width="100" height="100" alt="Logo">
-            <h1>¡Bienvenido a NimyPine!</h1>
+            <img src="{{ logo_url }}" class="logo" width="100" height="100" alt="Logo">
+            <h1>Confirma tu correo electrónico</h1>
         </div>
         <div class="content">
-            <p>Hola {{ user.first_name }},</p>
-            <p>¡Tu cuenta ha sido confirmada exitosamente! Aquí tienes tus credenciales de acceso para futuros inicios de sesión:</p>
-            <div class="username">Usuario: {{ user.username }}</div>
-            <p>Recuerda usar este usuario junto con tu contraseña para acceder a la plataforma.</p>
-            <p>¡Estamos emocionados de tenerte con nosotros!</p>
+            <p>Hola,</p>
+            <p>Gracias por registrarte en nuestra plataforma. Para completar tu registro, por favor confirma tu dirección de correo electrónico utilizando el siguiente código de verificación:</p>
+            <div class="code">{{ codigo }}</div>
+            <p>Ingresa este código en la página de confirmación para activar tu cuenta.</p>
+            <p>Si no solicitaste este registro, puedes ignorar este mensaje.</p>
         </div>
         <div class="footer">
             <p>Este es un mensaje automático, por favor no respondas a este correo.</p>

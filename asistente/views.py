@@ -219,7 +219,7 @@ def procesar_mensaje(mensaje, user, model='openai'):
         'empresa', 'ventas', 'facturacion', 'estandarizar', 'sql', 'codigo', 'grafico',
         'agregar', 'registrar', 'crear', 'materia prima', 'materias primas', 'pasos produccion',
         'produccion pasos', 'datos empresa', 'datos', 'informacion', 'moneda', 'predeterminada',
-        'cómo', 'guía', 'ayuda', 'instructivo', 'impuestos'
+        'cómo', 'guía', 'ayuda', 'instructivo', 'impuestos', 'negocio', 'PYMES'
     ]
     if not any(kw in mensaje_lower for kw in palabras_clave):
         return "Lo siento, solo puedo ayudarte con temas relacionados con la gestión de tu mipyme, como producción, ventas, insumos o procesos. ¿En qué puedo asistirte en esos aspectos?"

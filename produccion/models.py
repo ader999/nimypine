@@ -50,6 +50,7 @@ class Producto(models.Model):
     tamano_ancho = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Ancho (cm)")
     tamano_alto = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Alto (cm)")
     presentacion = models.CharField(max_length=200, blank=True, null=True, verbose_name="Presentación")
+    imagen = models.ImageField(upload_to='productos/', blank=True, null=True, verbose_name="Imagen del Producto")
     # --- CAMPO MODIFICADO ---
     # Relacionamos los productos con los procesos a través de una tabla intermedia
     procesos = models.ManyToManyField(Proceso, through='PasoDeProduccion', related_name='productos')

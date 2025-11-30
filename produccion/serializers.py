@@ -68,6 +68,7 @@ class ProductoSerializer(serializers.ModelSerializer):
             'id',
             'nombre',
             'descripcion',
+            'imagen',
             'mipyme',
             'mipyme_name',
             'precio_venta',

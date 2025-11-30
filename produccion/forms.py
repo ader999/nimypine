@@ -10,12 +10,13 @@ class ProductoForm(forms.ModelForm):
         model = Producto  # Le decimos al formulario que se base en el modelo Producto
 
         # Definimos los campos del modelo que queremos incluir en el formulario
-        fields = ['nombre', 'descripcion', 'porcentaje_ganancia', 'stock_actual', 'peso', 'tamano_largo', 'tamano_ancho', 'tamano_alto', 'presentacion']
+        fields = ['nombre', 'descripcion', 'imagen', 'porcentaje_ganancia', 'stock_actual', 'peso', 'tamano_largo', 'tamano_ancho', 'tamano_alto', 'presentacion']
 
         # Opcional: Personalizar las etiquetas y widgets para que se vean mejor con Bootstrap
         labels = {
             'nombre': 'Nombre del Producto',
             'descripcion': 'Descripción (opcional)',
+            'imagen': 'Imagen del Producto',
             'porcentaje_ganancia': 'Porcentaje de Ganancia (%)',
             'stock_actual': 'Stock Inicial (unidades)',
             'peso': 'Peso (kg) - Opcional',
@@ -27,6 +28,7 @@ class ProductoForm(forms.ModelForm):
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Tarta de Chocolate'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'imagen': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'porcentaje_ganancia': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 20'}),
             'stock_actual': forms.NumberInput(attrs={'class': 'form-control', 'value': 0}),
             'peso': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 1.5'}),

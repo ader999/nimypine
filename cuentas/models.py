@@ -87,6 +87,13 @@ class Mipyme(models.Model):
         verbose_name="Moneda predeterminada"
     )
 
+    # --- CONFIGURACIÓN DE TIENDA ---
+    tienda_visible = models.BooleanField(
+        default=False,
+        verbose_name="Visible en Tienda",
+        help_text="Activa esta opción para mostrar tus productos en la tienda pública."
+    )
+
     def __str__(self):
         return f"{self.nombre} (ID: {self.id})"
 

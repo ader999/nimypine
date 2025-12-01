@@ -10,10 +10,10 @@ from openpyxl import Workbook
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Producto, Insumo, Formulacion, PasoDeProduccion, Proceso, Venta, VentaItem, Impuesto
+from .models import Producto, Insumo, Formulacion, PasoDeProduccion, Proceso, Venta, VentaItem, Impuesto, ProductoImagen
 from .forms import ProductoForm, FormulacionForm, InsumoForm, FormulacionUpdateForm, ProcesoForm, PasoUpdateForm, PasoDeProduccionForm, CalculadoraLotesForm, VentaItemFormSet, ImpuestoForm
 from cuentas.decorators import rol_requerido, mipyme_requerida
-from cuentas.forms import CambiarContrasenaForm, ActualizarPerfilForm, ConfigurarAvatarForm, EditarInformacionEmpresaForm, ConfigurarLogoForm, CambiarSectorEconomicoForm, ConfigurarParametrosProduccionForm
+from cuentas.forms import CambiarContrasenaForm, ActualizarPerfilForm, ConfigurarAvatarForm, EditarInformacionEmpresaForm, ConfigurarImagenesEmpresaForm, CambiarSectorEconomicoForm, ConfigurarParametrosProduccionForm
 from cuentas.models import Usuario
 from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
@@ -202,6 +202,19 @@ def crear_producto(request):
             # Ahora sí, guarda el objeto completo en la base de datos
             nuevo_producto.save()
 
+            # --- PROCESAR IMÁGENES ADICIONALES ---
+            imagenes = request.FILES.getlist('imagenes_adicionales')
+            if imagenes:
+                # Limitar a 20 imágenes en total (incluyendo la principal si se cuenta)
+                # Aquí solo contamos las adicionales para simplificar, o validamos el total
+                for i, imagen in enumerate(imagenes):
+                    if i >= 20: break # Límite de seguridad
+                    ProductoImagen.objects.create(
+                        producto=nuevo_producto,
+                        imagen=imagen,
+                        orden=i
+                    )
+
             # Redirige al usuario a la lista de productos para que vea el nuevo item
             return redirect('produccion:lista_productos')
     else:
@@ -388,6 +401,19 @@ def editar_producto(request, producto_id):
             if usar_porcentaje_predeterminado:
                 producto_editado.porcentaje_ganancia = mipyme.porcentaje_ganancia_predeterminado
             producto_editado.save()
+
+            # --- PROCESAR IMÁGENES ADICIONALES ---
+            imagenes = request.FILES.getlist('imagenes_adicionales')
+            if imagenes:
+                # Contar cuántas ya tiene
+                count_existentes = producto.imagenes_adicionales.count()
+                for i, imagen in enumerate(imagenes):
+                    if count_existentes + i >= 20: break # Límite
+                    ProductoImagen.objects.create(
+                        producto=producto,
+                        imagen=imagen,
+                        orden=count_existentes + i
+                    )
 
             return redirect('produccion:lista_productos') # Redirigimos a la lista de productos
     else:
@@ -991,28 +1017,31 @@ def editar_informacion_empresa(request):
 @login_required
 @mipyme_requerida
 @rol_requerido('ADMIN')
-def configurar_logo(request):
+@login_required
+@mipyme_requerida
+@rol_requerido('ADMIN')
+def configurar_imagenes_empresa(request):
     """
-    Vista para configurar el logo de la empresa.
+    Vista para configurar el logo y la portada de la empresa.
     Solo accesible para administradores.
     """
     mipyme = request.user.mipyme
 
     if request.method == 'POST':
-        form = ConfigurarLogoForm(request.POST, request.FILES, instance=mipyme)
+        form = ConfigurarImagenesEmpresaForm(request.POST, request.FILES, instance=mipyme)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Logo de la empresa actualizado exitosamente.')
+            messages.success(request, 'Imágenes de la empresa actualizadas exitosamente.')
             return redirect('produccion:configuracion')
     else:
-        form = ConfigurarLogoForm(instance=mipyme)
+        form = ConfigurarImagenesEmpresaForm(instance=mipyme)
 
     contexto = {
         'form': form,
-        'titulo': 'Configurar Logo de la Empresa',
+        'titulo': 'Configurar Imágenes de la Empresa',
         'nombrepine': request.user.mipyme.nombre
     }
-    return render(request, 'produccion/configuraciones/configurar_logo.html', contexto)
+    return render(request, 'produccion/configuraciones/configurar_imagenes_empresa.html', contexto)
 
 
 @login_required
@@ -1244,3 +1273,86 @@ def gestion_impuestos(request):
 
 # --- FIN DE CONFIGURACIÓN ---
 # --- FIN DE VENTAS ---
+
+# --- MI TIENDITA ---
+
+@login_required
+@mipyme_requerida
+def mi_tiendita(request):
+    """
+    Vista para mostrar la 'Tiendita' del usuario con sus productos.
+    Solo accesible si la opción 'tienda_visible' está activada.
+    """
+    mipyme = request.user.mipyme
+    
+    # Verificar si la tienda está visible
+    if not mipyme.tienda_visible:
+        messages.warning(request, "Tu tienda no está visible. Actívala en Configuración para verla.")
+        return redirect('produccion:configuracion')
+
+    productos = Producto.objects.filter(mipyme=mipyme).order_by('nombre')
+    
+    contexto = {
+        'mipyme': mipyme,
+        'productos': productos,
+        'nombrepine': mipyme.nombre
+    }
+    return render(request, 'produccion/mi_tiendita.html', contexto)
+
+@login_required
+@mipyme_requerida
+def mi_tiendita_detalle(request, producto_id):
+    """
+    Vista para mostrar los detalles de un producto en la 'Tiendita'.
+    """
+    mipyme = request.user.mipyme
+    
+    # Verificar si la tienda está visible
+    if not mipyme.tienda_visible:
+        messages.warning(request, "Tu tienda no está visible.")
+        return redirect('produccion:configuracion')
+
+    producto = get_object_or_404(Producto, id=producto_id, mipyme=mipyme)
+
+    if request.method == 'POST':
+        # 1. Actualizar Imagen Principal
+        if 'imagen_principal' in request.FILES:
+            producto.imagen = request.FILES['imagen_principal']
+            producto.save()
+            messages.success(request, 'Imagen principal actualizada.')
+
+        # 2. Eliminar Imágenes Seleccionadas
+        eliminar_ids = request.POST.getlist('eliminar_imagen_ids')
+        if eliminar_ids:
+            ProductoImagen.objects.filter(id__in=eliminar_ids, producto=producto).delete()
+            messages.success(request, 'Imágenes seleccionadas eliminadas.')
+
+        # 3. Agregar Nuevas Imágenes Adicionales
+        imagenes_nuevas = request.FILES.getlist('imagenes_adicionales')
+        if imagenes_nuevas:
+            count_existentes = producto.imagenes_adicionales.count()
+            agregadas = 0
+            for i, imagen in enumerate(imagenes_nuevas):
+                if count_existentes + i >= 20:
+                    messages.warning(request, f'Se alcanzó el límite de 20 imágenes. Solo se agregaron {agregadas} imágenes.')
+                    break
+                ProductoImagen.objects.create(
+                    producto=producto,
+                    imagen=imagen,
+                    orden=count_existentes + i
+                )
+                agregadas += 1
+            if agregadas > 0:
+                messages.success(request, f'Se agregaron {agregadas} imágenes nuevas.')
+
+        return redirect('produccion:mi_tiendita_detalle', producto_id=producto.id)
+
+    imagenes_adicionales = producto.imagenes_adicionales.all()
+
+    contexto = {
+        'mipyme': mipyme,
+        'producto': producto,
+        'imagenes_adicionales': imagenes_adicionales,
+        'nombrepine': mipyme.nombre
+    }
+    return render(request, 'produccion/mi_tiendita_detalle.html', contexto)

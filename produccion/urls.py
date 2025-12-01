@@ -56,9 +56,13 @@ urlpatterns = [
     path('configuracion/configurar-avatar/', views.configurar_avatar, name='configurar_avatar'),
     # --- CONFIGURACIÓN DE EMPRESA ---
     path('configuracion/editar-empresa/', views.editar_informacion_empresa, name='editar_informacion_empresa'),
-    path('configuracion/configurar-logo/', views.configurar_logo, name='configurar_logo'),
-    path('configuracion/cambiar-sector/', views.cambiar_sector_economico, name='cambiar_sector_economico'),
+    path('configuracion/imagenes-empresa/', views.configurar_imagenes_empresa, name='configurar_imagenes_empresa'),
+    path('configuracion/sector-economico/', views.cambiar_sector_economico, name='cambiar_sector_economico'),
     path('configuracion/parametros-produccion/', views.configurar_parametros_produccion, name='configurar_parametros_produccion'),
     # --- IMPUESTOS ---
     path('impuestos/', views.gestion_impuestos, name='gestion_impuestos'),
+    # --- MI TIENDITA ---
+    path('mi-tiendita/', views.mi_tiendita, name='mi_tiendita'),
+    path('mi-tiendita/producto/<int:producto_id>/', views.mi_tiendita_detalle, name='mi_tiendita_detalle'),
+    # Reload trigger
 ]

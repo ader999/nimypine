@@ -61,6 +61,7 @@ class Mipyme(models.Model):
         verbose_name="Identificador Fiscal (RFC, RUT, etc.)"
     )
     logo = models.ImageField(upload_to='logos/', null=True, blank=True, verbose_name="Logo de la Empresa")
+    portada = models.ImageField(upload_to='portadas/', null=True, blank=True, verbose_name="Portada de la Empresa")
 
     # Configuración de producción
     unidad_medida_predeterminada = models.JSONField(

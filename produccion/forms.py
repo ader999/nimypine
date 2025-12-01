@@ -5,6 +5,10 @@ from django.core.exceptions import ValidationError
 from django.forms import modelformset_factory
 from .models import Producto, Formulacion, Insumo, Proceso, PasoDeProduccion, EstándaresProducto, Venta, VentaItem, UnidadMedida, Impuesto
 
+# Widget personalizado para permitir múltiples archivos
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
 class ProductoForm(forms.ModelForm):
     class Meta:
         model = Producto  # Le decimos al formulario que se base en el modelo Producto
@@ -37,6 +41,13 @@ class ProductoForm(forms.ModelForm):
             'tamano_alto': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 10'}),
             'presentacion': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Bolsa de 500g'}),
         }
+
+    # Campo para subir múltiples imágenes adicionales
+    imagenes_adicionales = forms.FileField(
+        widget=MultipleFileInput(attrs={'class': 'form-control', 'multiple': True}),
+        label='Imágenes Adicionales (Máx. 20 en total)',
+        required=False
+    )
 
     def __init__(self, *args, **kwargs):
         # Sacamos el argumento 'usar_porcentaje_predeterminado' que le pasaremos desde la vista

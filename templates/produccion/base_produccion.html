@@ -173,6 +173,15 @@
                     Impuestos
                 </a>
             </li>
+            
+            {% if request.user.mipyme.tienda_visible %}
+            <li>
+                <a href="{% url 'produccion:mi_tiendita' %}" class="nav-link text-white">
+                    <i class="bi bi-shop"></i>
+                    Mi Tiendita
+                </a>
+            </li>
+            {% endif %}
         </ul>
         <hr>
         <!-- Información del Usuario abajo -->

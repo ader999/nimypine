@@ -28,11 +28,20 @@
                 <div class="mb-4">
                     <h6 class="text-primary"><i class="bi bi-building me-2"></i>Empresa (MiPyme)</h6>
                     <p class="text-muted small">Ajusta los detalles de tu empresa y preferencias generales.</p>
-                    <ul class="list-unstyled">
-                        <li><a href="{% url 'produccion:editar_informacion_empresa' %}" class="text-decoration-none">Editar información de la empresa</a></li>
-                        <li><a href="{% url 'produccion:configurar_logo' %}" class="text-decoration-none">Configurar logo</a></li>
-                        <li><a href="{% url 'produccion:cambiar_sector_economico' %}" class="text-decoration-none">Cambiar sector económico</a></li>
-                    </ul>
+                    <div class="list-group list-group-flush">
+                        <a href="{% url 'produccion:editar_informacion_empresa' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div><i class="bi bi-building me-2 text-primary"></i>Información Básica</div>
+                            <i class="bi bi-chevron-right text-muted"></i>
+                        </a>
+                        <a href="{% url 'produccion:configurar_imagenes_empresa' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div><i class="bi bi-images me-2 text-primary"></i>Logo y Portada</div>
+                            <i class="bi bi-chevron-right text-muted"></i>
+                        </a>
+                        <a href="{% url 'produccion:cambiar_sector_economico' %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div><i class="bi bi-briefcase me-2 text-primary"></i>Sector Económico</div>
+                            <i class="bi bi-chevron-right text-muted"></i>
+                        </a>
+                    </div>
                 </div>
 
                 <!-- Configuración de Producción -->

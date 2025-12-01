@@ -19,7 +19,7 @@
 
             <!-- Campos principales -->
             {% for field in form %}
-                {% if field.name != 'peso' and field.name != 'tamano_largo' and field.name != 'tamano_ancho' and field.name != 'tamano_alto' and field.name != 'presentacion' %}
+                {% if field.name != 'peso' and field.name != 'tamano_largo' and field.name != 'tamano_ancho' and field.name != 'tamano_alto' and field.name != 'presentacion' and field.name != 'imagenes_adicionales' %}
             <div class="mb-3">
                 <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
                 {{ field }}
@@ -28,6 +28,14 @@
             </div>
                 {% endif %}
             {% endfor %}
+
+            <!-- Campo de Imágenes Adicionales -->
+            <div class="mb-3">
+                <label for="{{ form.imagenes_adicionales.id_for_label }}" class="form-label">{{ form.imagenes_adicionales.label }}</label>
+                {{ form.imagenes_adicionales }}
+                {% if form.imagenes_adicionales.help_text %}<div class="form-text">{{ form.imagenes_adicionales.help_text }}</div>{% endif %}
+                {% for error in form.imagenes_adicionales.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
 
             <!-- Acordeón para datos opcionales -->
             <div class="accordion mt-4" id="accordionOpcionales">

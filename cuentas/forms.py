@@ -201,15 +201,17 @@ class EditarInformacionEmpresaForm(forms.ModelForm):
         }
 
 
-class ConfigurarLogoForm(forms.ModelForm):
+class ConfigurarImagenesEmpresaForm(forms.ModelForm):
     class Meta:
         model = Mipyme
-        fields = ['logo']
+        fields = ['logo', 'portada']
         widgets = {
             'logo': forms.FileInput(attrs={'class': 'form-control'}),
+            'portada': forms.FileInput(attrs={'class': 'form-control'}),
         }
         labels = {
             'logo': 'Seleccionar Logo',
+            'portada': 'Seleccionar Portada',
         }
 
 

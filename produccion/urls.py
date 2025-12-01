@@ -64,5 +64,6 @@ urlpatterns = [
     # --- MI TIENDITA ---
     path('mi-tiendita/', views.mi_tiendita, name='mi_tiendita'),
     path('mi-tiendita/producto/<int:producto_id>/', views.mi_tiendita_detalle, name='mi_tiendita_detalle'),
+    path('productos/<int:producto_id>/toggle-disponible/', views.toggle_producto_disponible, name='toggle_producto_disponible'),
     # Reload trigger
 ]

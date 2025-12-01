@@ -60,6 +60,13 @@
                         {% endif %}
                         <div class="card-body">
                             <h5 class="card-title">{{ producto.nombre }}</h5>
+                            <div class="mb-2">
+                                {% if producto.disponible_en_api %}
+                                    <span class="badge bg-success" style="font-size: 0.7rem;">Disponible</span>
+                                {% else %}
+                                    <span class="badge bg-danger" style="font-size: 0.7rem;">No disponible</span>
+                                {% endif %}
+                            </div>
                             <p class="card-text text-muted small">{{ producto.descripcion|truncatechars:100 }}</p>
                             <div class="d-flex justify-content-between align-items-center mt-3">
                                 <span class="h5 mb-0 text-primary">{{ mipyme.moneda_predeterminada }} {{ producto.precio_venta }}</span>

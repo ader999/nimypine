@@ -55,8 +55,8 @@ class StoreProductListAPIView(generics.ListAPIView):
     authentication_classes = []
 
     def get_queryset(self):
-        # Filter products where the related Mipyme has tienda_visible=True
-        return Producto.objects.filter(mipyme__tienda_visible=True).order_by('nombre')
+        # Filter products where the related Mipyme has tienda_visible=True AND the product is marked as available
+        return Producto.objects.filter(mipyme__tienda_visible=True, disponible_en_api=True).order_by('nombre')
 
 class ToggleTiendaVisibleView(APIView):
     """

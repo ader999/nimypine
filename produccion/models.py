@@ -56,6 +56,13 @@ class Producto(models.Model):
     procesos = models.ManyToManyField(Proceso, through='PasoDeProduccion', related_name='productos')
     # Relacionamos los productos con los impuestos
     impuestos = models.ManyToManyField('Impuesto', blank=True, related_name='productos')
+    
+    # --- CAMPO NUEVO PARA VISIBILIDAD EN API ---
+    disponible_en_api = models.BooleanField(
+        default=True,
+        verbose_name="Disponible en Tienda/API",
+        help_text="Si está desactivado, este producto no aparecerá en la tienda pública ni en la API."
+    )
 
     def __str__(self):
         return self.nombre

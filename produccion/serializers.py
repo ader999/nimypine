@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Producto, Formulacion, PasoDeProduccion, Impuesto
+from .models import Producto, Formulacion, PasoDeProduccion, Impuesto, ProductoImagen
 
 
 class FormulacionSerializer(serializers.ModelSerializer):
@@ -52,12 +52,25 @@ class ImpuestoSerializer(serializers.ModelSerializer):
         ]
 
 
+class ProductoImagenSerializer(serializers.ModelSerializer):
+    """
+    Serializer for ProductoImagen model.
+    """
+    class Meta:
+        model = ProductoImagen
+        fields = ['id', 'imagen', 'orden']
+
+
 class ProductoSerializer(serializers.ModelSerializer):
     """
     Serializer for Producto model, including product details, pricing, stock, and related mipyme information.
     """
     mipyme_name = serializers.CharField(source='mipyme.nombre', read_only=True)
     costo_de_produccion = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    imagenes_adicionales = ProductoImagenSerializer(many=True, read_only=True)
+    mipyme_portada = serializers.ImageField(source='mipyme.portada', read_only=True)
+    mipyme_logo = serializers.ImageField(source='mipyme.logo', read_only=True)
+    mipyme_sector = serializers.CharField(source='mipyme.sector.nombre', read_only=True)
     formulacion = FormulacionSerializer(many=True, read_only=True)
     procesos_detalles = PasoDeProduccionSerializer(source='pasodeproduccion_set', many=True, read_only=True)
     impuestos_detalles = ImpuestoSerializer(source='impuestos', many=True, read_only=True)
@@ -69,8 +82,12 @@ class ProductoSerializer(serializers.ModelSerializer):
             'nombre',
             'descripcion',
             'imagen',
+            'imagenes_adicionales',
             'mipyme',
             'mipyme_name',
+            'mipyme_portada',
+            'mipyme_logo',
+            'mipyme_sector',
             'precio_venta',
             'porcentaje_ganancia',
             'stock_actual',

@@ -7,8 +7,9 @@ import base64
 from datetime import datetime, timedelta
 from django.db.models import Sum
 from openpyxl import Workbook
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from .models import Producto, Insumo, Formulacion, PasoDeProduccion, Proceso, Venta, VentaItem, Impuesto, ProductoImagen
 from .forms import ProductoForm, FormulacionForm, InsumoForm, FormulacionUpdateForm, ProcesoForm, PasoUpdateForm, PasoDeProduccionForm, CalculadoraLotesForm, VentaItemFormSet, ImpuestoForm
@@ -1356,3 +1357,13 @@ def mi_tiendita_detalle(request, producto_id):
         'nombrepine': mipyme.nombre
     }
     return render(request, 'produccion/mi_tiendita_detalle.html', contexto)
+@login_required
+@require_POST
+def toggle_producto_disponible(request, producto_id):
+    """
+    Alterna la disponibilidad de un producto en la API/Tienda.
+    """
+    producto = get_object_or_404(Producto, id=producto_id, mipyme=request.user.mipyme)
+    producto.disponible_en_api = not producto.disponible_en_api
+    producto.save()
+    return JsonResponse({'status': 'success', 'disponible': producto.disponible_en_api})

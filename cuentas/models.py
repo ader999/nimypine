@@ -60,6 +60,9 @@ class Mipyme(models.Model):
         blank=True,
         verbose_name="Identificador Fiscal (RFC, RUT, etc.)"
     )
+    descripcion = models.CharField(max_length=250, null=True, blank=True, verbose_name="Descripción de la Empresa")
+    direccion = models.CharField(max_length=150, null=True, blank=True, verbose_name="Dirección")
+    coordenadas = models.CharField(max_length=500, null=True, blank=True, verbose_name="Coordenadas (Google Maps)")
     logo = models.ImageField(upload_to='logos/', null=True, blank=True, verbose_name="Logo de la Empresa")
     portada = models.ImageField(upload_to='portadas/', null=True, blank=True, verbose_name="Portada de la Empresa")
 

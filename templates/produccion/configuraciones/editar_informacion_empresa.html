@@ -68,6 +68,39 @@
                         {% endif %}
                     </div>
 
+                    <div class="mb-3">
+                        <label for="{{ form.descripcion.id_for_label }}" class="form-label">Descripción de la Empresa</label>
+                        {{ form.descripcion }}
+                        {% if form.descripcion.errors %}
+                            <div class="text-danger small">
+                                {{ form.descripcion.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Breve descripción de tu empresa (máximo 250 caracteres).</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.direccion.id_for_label }}" class="form-label">Dirección</label>
+                        {{ form.direccion }}
+                        {% if form.direccion.errors %}
+                            <div class="text-danger small">
+                                {{ form.direccion.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Dirección física de la empresa (máximo 150 caracteres).</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.coordenadas.id_for_label }}" class="form-label">Coordenadas (Google Maps)</label>
+                        {{ form.coordenadas }}
+                        {% if form.coordenadas.errors %}
+                            <div class="text-danger small">
+                                {{ form.coordenadas.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Enlace o coordenadas de Google Maps.</div>
+                    </div>
+
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                         <a href="{% url 'produccion:configuracion' %}" class="btn btn-outline-secondary me-md-2">Cancelar</a>
                         <button type="submit" class="btn btn-primary" id="submit-btn">

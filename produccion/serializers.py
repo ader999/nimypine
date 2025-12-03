@@ -71,6 +71,10 @@ class ProductoSerializer(serializers.ModelSerializer):
     mipyme_portada = serializers.ImageField(source='mipyme.portada', read_only=True)
     mipyme_logo = serializers.ImageField(source='mipyme.logo', read_only=True)
     mipyme_sector = serializers.CharField(source='mipyme.sector.nombre', read_only=True)
+    mipyme_descripcion = serializers.CharField(source='mipyme.descripcion', read_only=True)
+    mipyme_direccion = serializers.CharField(source='mipyme.direccion', read_only=True)
+    mipyme_coordenadas = serializers.CharField(source='mipyme.coordenadas', read_only=True)
+    mipyme_telefono = serializers.CharField(source='mipyme.numero_telefono', read_only=True)
     formulacion = FormulacionSerializer(many=True, read_only=True)
     procesos_detalles = PasoDeProduccionSerializer(source='pasodeproduccion_set', many=True, read_only=True)
     impuestos_detalles = ImpuestoSerializer(source='impuestos', many=True, read_only=True)
@@ -88,6 +92,10 @@ class ProductoSerializer(serializers.ModelSerializer):
             'mipyme_portada',
             'mipyme_logo',
             'mipyme_sector',
+            'mipyme_descripcion',
+            'mipyme_direccion',
+            'mipyme_coordenadas',
+            'mipyme_telefono',
             'precio_venta',
             'porcentaje_ganancia',
             'stock_actual',

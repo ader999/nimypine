@@ -186,19 +186,36 @@ class ConfigurarAvatarForm(forms.ModelForm):
 class EditarInformacionEmpresaForm(forms.ModelForm):
     class Meta:
         model = Mipyme
-        fields = ['nombre', 'numero_telefono', 'correo', 'identificador_fiscal']
+        fields = ['nombre', 'numero_telefono', 'correo', 'identificador_fiscal', 'descripcion', 'direccion', 'coordenadas']
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'numero_telefono': forms.TextInput(attrs={'class': 'form-control'}),
             'correo': forms.EmailInput(attrs={'class': 'form-control'}),
             'identificador_fiscal': forms.TextInput(attrs={'class': 'form-control'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'direccion': forms.TextInput(attrs={'class': 'form-control'}),
+            'coordenadas': forms.TextInput(attrs={'class': 'form-control'}),
         }
         labels = {
             'nombre': 'Nombre de la Empresa',
             'numero_telefono': 'Número de Teléfono',
             'correo': 'Correo Electrónico',
             'identificador_fiscal': 'Identificador Fiscal (RFC, RUT, etc.)',
+            'descripcion': 'Descripción de la Empresa',
+            'direccion': 'Dirección',
+            'coordenadas': 'Coordenadas (Google Maps)',
         }
+
+    def clean_coordenadas(self):
+        data = self.cleaned_data['coordenadas']
+        if data:
+            # Si el usuario pegó el iframe completo, extraemos el src
+            import re
+            # Buscamos src="URL" o src='URL'
+            match = re.search(r'src=["\']([^"\']+)["\']', data)
+            if match:
+                return match.group(1)
+        return data
 
 
 class ConfigurarImagenesEmpresaForm(forms.ModelForm):

@@ -67,19 +67,7 @@ class Producto(models.Model):
     def __str__(self):
         return self.nombre
 
-# --- NUEVO MODELO PARA IMÁGENES ADICIONALES ---
-class ProductoImagen(models.Model):
-    producto = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name='imagenes_adicionales')
-    imagen = models.ImageField(upload_to='productos/adicionales/', verbose_name="Imagen Adicional")
-    orden = models.PositiveIntegerField(default=0, help_text="Orden de visualización")
 
-    class Meta:
-        ordering = ['orden']
-        verbose_name = "Imagen Adicional de Producto"
-        verbose_name_plural = "Imágenes Adicionales de Productos"
-
-    def __str__(self):
-        return f"Imagen de {self.producto.nombre}"
 
     # --- MÉTODO MODIFICADO: Para calcular el costo de producción total ---
     @property
@@ -143,6 +131,21 @@ class ProductoImagen(models.Model):
             self.precio_venta = costo_produccion + ganancia
 
         super().save(*args, **kwargs)
+
+
+# --- NUEVO MODELO PARA IMÁGENES ADICIONALES ---
+class ProductoImagen(models.Model):
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name='imagenes_adicionales')
+    imagen = models.ImageField(upload_to='productos/adicionales/', verbose_name="Imagen Adicional")
+    orden = models.PositiveIntegerField(default=0, help_text="Orden de visualización")
+
+    class Meta:
+        ordering = ['orden']
+        verbose_name = "Imagen Adicional de Producto"
+        verbose_name_plural = "Imágenes Adicionales de Productos"
+
+    def __str__(self):
+        return f"Imagen de {self.producto.nombre}"
 
 
 # --- NUEVO MODELO ---

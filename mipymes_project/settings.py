@@ -45,8 +45,9 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "cuentas",
     "marketplace",
-    "produccion",
+    "produccion.apps.ProduccionConfig",
     "asistente",
+
     "minio_storage",
 ]
 

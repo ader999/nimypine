@@ -10,9 +10,14 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name="mipyme",
-            name="mostrar_productos_en_marketplace",
-            field=models.BooleanField(default=False),
+        migrations.RunSQL(
+            "ALTER TABLE cuentas_mipyme ADD COLUMN IF NOT EXISTS mostrar_productos_en_marketplace boolean DEFAULT false NOT NULL;",
+            state_operations=[
+                migrations.AddField(
+                    model_name="mipyme",
+                    name="mostrar_productos_en_marketplace",
+                    field=models.BooleanField(default=False),
+                ),
+            ],
         ),
     ]

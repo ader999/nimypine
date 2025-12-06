@@ -50,7 +50,7 @@
             <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
                 {% for producto in productos %}
                 <div class="col">
-                    <div class="card h-100 shadow-sm">
+                    <div class="card h-100 shadow-sm {% if not producto.imagen %}border-warning{% endif %}">
                         {% if producto.imagen %}
                             <img src="{{ producto.imagen.url }}" class="card-img-top" alt="{{ producto.nombre }}" style="height: 200px; object-fit: cover;">
                         {% else %}
@@ -67,6 +67,12 @@
                                     <span class="badge bg-danger" style="font-size: 0.7rem;">No disponible</span>
                                 {% endif %}
                             </div>
+                            {% if not producto.imagen %}
+                                <div class="alert alert-warning p-1 mb-2" style="font-size: 0.7rem;">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                    No disponible para la app Mercaditoni debido a que el producto no posee imagen
+                                </div>
+                            {% endif %}
                             <p class="card-text text-muted small">{{ producto.descripcion|truncatechars:100 }}</p>
                             <div class="d-flex justify-content-between align-items-center mt-3">
                                 <span class="h5 mb-0 text-primary">{{ mipyme.moneda_predeterminada }} {{ producto.precio_venta }}</span>

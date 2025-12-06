@@ -128,8 +128,9 @@ def registro_mipyme_view(request):
                 # 1. Crear la Mipyme
                 mipyme = Mipyme.objects.create(
                     nombre=datos['nombre_empresa'],
-                    identificador_fiscal=datos.get('identificador_fiscal'),
-                    sector=datos['sector_economico']
+                    identificador_fiscal=datos.get('identificador_fiscal') or None,
+                    sector=datos['sector_economico'],
+                    mostrar_productos_en_marketplace=False
                 )
                 # 2. Crear el Usuario Administrador
                 username = generar_username_unico(datos['first_name'], datos['last_name'])

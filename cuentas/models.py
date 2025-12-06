@@ -97,6 +97,7 @@ class Mipyme(models.Model):
         verbose_name="Visible en Tienda",
         help_text="Activa esta opción para mostrar tus productos en la tienda pública."
     )
+    mostrar_productos_en_marketplace = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.nombre} (ID: {self.id})"
